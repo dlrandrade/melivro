@@ -1,21 +1,25 @@
-
 import React, { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { MOCK_BOOKS, MOCK_PEOPLE } from '../constants';
 import BookCard from '../components/BookCard';
 import PersonCard from '../components/PersonCard';
+import { Book, NotablePerson } from '../types';
 
-const Search: React.FC = () => {
+interface SearchProps {
+  allBooks: Book[];
+  allPeople: NotablePerson[];
+}
+
+const Search: React.FC<SearchProps> = ({ allBooks, allPeople }) => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const q = queryParams.get('q')?.toLowerCase() || '';
 
-  const filteredBooks = useMemo(() => 
-    MOCK_BOOKS.filter(b => b.title.toLowerCase().includes(q) || b.authors.toLowerCase().includes(q)), [q]
+  const filteredBooks = useMemo(() =>
+    allBooks.filter(b => b.title.toLowerCase().includes(q) || b.authors.toLowerCase().includes(q)), [allBooks, q]
   );
 
-  const filteredPeople = useMemo(() => 
-    MOCK_PEOPLE.filter(p => p.name.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q))), [q]
+  const filteredPeople = useMemo(() =>
+    allPeople.filter(p => p.name.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q))), [allPeople, q]
   );
 
   return (
@@ -44,7 +48,7 @@ const Search: React.FC = () => {
           </section>
         )}
 
-        {filteredBooks.length === 0 && filteredPeople.length === 0 && (
+        {(filteredBooks.length === 0 && filteredPeople.length === 0) && (
           <div className="text-center py-20">
             <p className="text-gray-500 font-semibold">Nenhum resultado encontrado para sua busca.</p>
             <button className="mt-4 text-black hover:underline font-bold" onClick={() => window.history.back()}>Voltar</button>

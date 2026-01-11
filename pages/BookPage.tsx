@@ -1,24 +1,32 @@
 import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MOCK_BOOKS, MOCK_CITATIONS, MOCK_PEOPLE, AFFILIATE_TAG } from '../constants';
+import { Book, NotablePerson, Citation } from '../types';
 import MetaTags from '../components/MetaTags';
 
-const BookPage: React.FC = () => {
+const AFFILIATE_TAG = 'livrme-20';
+
+interface BookPageProps {
+  allBooks: Book[];
+  allCitations: Citation[];
+  allPeople: NotablePerson[];
+}
+
+const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }) => {
   const { slug } = useParams<{ slug: string }>();
 
-  const book = useMemo(() => 
-    MOCK_BOOKS.find(b => b.slug === slug), [slug]
+  const book = useMemo(() =>
+    allBooks.find(b => b.slug === slug), [allBooks, slug]
   );
 
-  const citations = useMemo(() => {
+  const citationsWithPeople = useMemo(() => {
     if (!book) return [];
-    return MOCK_CITATIONS
+    return allCitations
       .filter(c => c.bookId === book.id)
       .map(c => ({
         ...c,
-        person: MOCK_PEOPLE.find(p => p.id === c.personId)
+        person: allPeople.find(p => p.id === c.personId)
       }));
-  }, [book]);
+  }, [book, allCitations, allPeople]);
 
   const amazonUrl = useMemo(() => {
     if (!book) return '';
@@ -32,12 +40,12 @@ const BookPage: React.FC = () => {
       <div className="p-20 text-center font-bold">Livro não encontrado.</div>
     </>
   );
-  
+
   const truncatedSynopsis = book.synopsis.length > 155 ? book.synopsis.substring(0, 155) + '...' : book.synopsis;
 
   return (
     <>
-      <MetaTags 
+      <MetaTags
         title={`${book.title} por ${book.authors} | livr.me`}
         description={`Veja quem recomendou "${book.title}". Sinopse: ${truncatedSynopsis}`}
         imageUrl={book.coverUrl}
@@ -51,7 +59,7 @@ const BookPage: React.FC = () => {
               <div className="w-full aspect-[2/3] bg-white p-4 rounded-sm shadow-sm border border-[var(--border-color)] overflow-hidden mb-8">
                 <img src={book.coverUrl} alt={book.title} className="w-full h-full object-contain" />
               </div>
-              <a href={amazonUrl} target="_blank" className="block w-full text-center py-3 bg-black text-white rounded-md font-bold text-sm hover:bg-gray-800 transition-all">
+              <a href={amazonUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-black text-white rounded-md font-bold text-sm hover:bg-gray-800 transition-all">
                 Comprar na Amazon
               </a>
             </div>
@@ -63,27 +71,27 @@ const BookPage: React.FC = () => {
               <div className="mb-12">
                 <h1 className="font-serif text-4xl md:text-6xl font-bold text-gray-900 mb-2 leading-tight tracking-tighter">{book.title}</h1>
                 <p className="text-xl font-medium text-gray-500 mb-8">por {book.authors}</p>
-                
+
                 <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                   <p>{book.synopsis}</p>
+                  <p>{book.synopsis}</p>
                 </div>
               </div>
 
               <div className="mt-16 pt-12 border-t border-[var(--border-color)]">
                 <h2 className="font-serif text-3xl font-bold mb-10 text-gray-900 tracking-tighter">Recomendado por</h2>
                 <div className="space-y-12">
-                  {citations.length > 0 ? citations.map(cit => cit.person && (
+                  {citationsWithPeople.length > 0 ? citationsWithPeople.map(cit => cit.person && (
                     <div key={cit.id} className="flex gap-6">
                       <Link to={`/p/${cit.person.slug}`} className="flex-shrink-0">
-                        <img src={cit.person.imageUrl} alt={cit.person.name} className="w-14 h-14 rounded-full border-2 border-gray-200" />
+                        <img src={cit.person.imageUrl} alt={cit.person.name} className="w-14 h-14 rounded-full border-2 border-gray-200 object-cover" />
                       </Link>
                       <div className="flex-1">
                         <p className="text-lg text-gray-700 leading-relaxed mb-3">
-                           "{cit.quoteExcerpt}"
+                          "{cit.quoteExcerpt}"
                         </p>
                         <p className="font-semibold text-gray-800">
                           — <Link to={`/p/${cit.person.slug}`} className="hover:text-black">{cit.person.name}</Link>,{' '}
-                          <a href={cit.sourceUrl} target="_blank" className="text-gray-500 hover:underline">{cit.sourceTitle} ({cit.citedYear})</a>
+                          <a href={cit.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:underline">{cit.sourceTitle} ({cit.citedYear})</a>
                         </p>
                       </div>
                     </div>
