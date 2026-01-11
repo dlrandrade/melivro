@@ -33,15 +33,22 @@
             --border-color: #EAEAEA;
         }
 
+        * {
+            font-family: 'Proza Libre', sans-serif !important;
+        }
+
         body {
-            font-family: 'Proza Libre', sans-serif;
+            font-family: 'Proza Libre', sans-serif !important;
             background-color: var(--bg-main);
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
         }
 
-        .font-serif {
-            font-family: 'Proza Libre', sans-serif;
+        h1, h2, h3, h4, h5, h6,
+        .font-serif,
+        .prose,
+        .prose-lg {
+            font-family: 'Proza Libre', sans-serif !important;
         }
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
