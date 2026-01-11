@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { extractBooksFromUrl, extractBooksFromText, fetchBookDetailsFromAmazon } from '../../services/geminiService';
+import { extractBooksFromUrl, extractBooksFromText, fetchBookDetailsFromTitleAndAuthor } from '../../src/services/openRouterService';
 import { Book, Citation, CitationType, NotablePerson } from '../../types';
 
 interface ContentImporterProps {
@@ -18,12 +18,13 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
   const [enrichingBook, setEnrichingBook] = useState<string | null>(null);
   const [extractedItems, setExtractedItems] = useState<{ title: string; author: string; relevance?: string }[]>([]);
   const [booksToAssign, setBooksToAssign] = useState<(Book & { relevance?: string })[]>([]);
+  const [selectedPeople, setSelectedPeople] = useState<Record<string, string>>({});
 
   const handleExtract = async () => {
     if (!inputValue.trim()) return;
     setIsExtracting(true);
     setExtractedItems([]);
-    
+
     let results = [];
     if (sourceType === 'url') {
       results = await extractBooksFromUrl(inputValue);
@@ -37,8 +38,8 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
 
   const handleEnrichAndConfirm = async (title: string, author: string, relevance?: string) => {
     setEnrichingBook(title);
-    const details = await fetchBookDetailsFromAmazon(title, author);
-    
+    const details = await fetchBookDetailsFromTitleAndAuthor(title, author);
+
     if (details) {
       const newBookData: Omit<Book, 'id' | 'citationCount'> = {
         title,
@@ -60,23 +61,28 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
   };
 
   const handleAssign = (bookId: string, personId: string) => {
-      if (!personId) {
-          alert("Por favor, selecione uma personalidade.");
-          return;
-      }
-      const bookToAssign = booksToAssign.find(b => b.id === bookId);
-      const citation: Omit<Citation, 'id'> = {
-          bookId,
-          personId,
-          citedYear: new Date().getFullYear(),
-          citedType: CitationType.CITED,
-          sourceUrl: sourceType === 'url' ? inputValue : '#',
-          sourceTitle: 'Fonte Importada',
-          quoteExcerpt: bookToAssign?.relevance || 'Citado durante importação de conteúdo.'
-      };
-      onAddCitation(citation);
-      setBooksToAssign(prev => prev.filter(b => b.id !== bookId));
-      alert("Citação atribuída com sucesso!");
+    if (!personId) {
+      alert("Por favor, selecione uma personalidade.");
+      return;
+    }
+    const bookToAssign = booksToAssign.find(b => b.id === bookId);
+    const citation: Omit<Citation, 'id'> = {
+      bookId,
+      personId,
+      citedYear: new Date().getFullYear(),
+      citedType: CitationType.CITED,
+      sourceUrl: sourceType === 'url' ? inputValue : '#',
+      sourceTitle: 'Fonte Importada',
+      quoteExcerpt: bookToAssign?.relevance || 'Citado durante importação de conteúdo.'
+    };
+    onAddCitation(citation);
+    setBooksToAssign(prev => prev.filter(b => b.id !== bookId));
+    setSelectedPeople(prev => {
+      const next = { ...prev };
+      delete next[bookId];
+      return next;
+    });
+    alert("Citação atribuída com sucesso!");
   };
 
   return (
@@ -91,21 +97,21 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
               <button onClick={() => setSourceType('text')} className={`text-sm font-bold ${sourceType === 'text' ? 'text-black' : 'text-gray-400'}`}>Texto</button>
             </div>
             {sourceType === 'url' ? (
-              <input 
+              <input
                 className="w-full bg-gray-50 border border-gray-200 rounded-md p-3 text-sm focus:ring-2 focus:ring-black/20 outline-none mb-4"
                 placeholder="Cole URL de artigo ou YouTube..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
               />
             ) : (
-              <textarea 
+              <textarea
                 className="w-full h-48 bg-gray-50 border border-gray-200 rounded-md p-3 text-sm focus:ring-2 focus:ring-black/20 outline-none resize-none mb-4"
                 placeholder="Cole o texto de uma entrevista ou podcast aqui..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
               />
             )}
-            <button 
+            <button
               onClick={handleExtract}
               disabled={isExtracting || !!enrichingBook}
               className={`w-full py-3 rounded-md font-bold transition-all ${isExtracting || !!enrichingBook ? 'bg-gray-300 text-gray-500' : 'bg-black text-white hover:bg-gray-800'}`}
@@ -139,8 +145,8 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
                       <td className="px-6 py-4 text-gray-600">{item.author}</td>
                       <td className="px-6 py-4 text-gray-500 text-xs italic max-w-xs truncate" title={item.relevance}>"{item.relevance}"</td>
                       <td className="px-6 py-4 text-right">
-                        <button 
-                          onClick={() => handleEnrichAndConfirm(item.title, item.author, item.relevance)} 
+                        <button
+                          onClick={() => handleEnrichAndConfirm(item.title, item.author, item.relevance)}
                           disabled={isExtracting || !!enrichingBook}
                           className="text-black font-bold hover:underline disabled:text-gray-400"
                         >
@@ -159,49 +165,51 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
           </div>
         </div>
       </div>
-      
+
       {/* Seção de Atribuição */}
       {booksToAssign.length > 0 && (
-          <div className="mt-12">
-              <h2 className="font-bold text-xl mb-4">Livros Prontos para Atribuir</h2>
-               <div className="bg-white border border-[var(--border-color)] rounded-lg overflow-hidden">
-                   <table className="w-full text-left text-sm">
-                        <thead>
-                            <tr className="bg-gray-50/50">
-                                <th className="px-6 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Livro</th>
-                                <th className="px-6 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Atribuir a</th>
-                                <th className="px-6 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[var(--border-color)]">
-                            {booksToAssign.map(book => {
-                                const [selectedPerson, setSelectedPerson] = useState('');
-                                return (
-                                <tr key={book.id}>
-                                    <td className="px-6 py-4 flex items-center gap-4">
-                                        <img src={book.coverUrl} alt={book.title} className="w-10 h-14 object-contain"/>
-                                        <div>
-                                            <p className="font-bold">{book.title}</p>
-                                            <p className="text-gray-500 text-xs">{book.authors}</p>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <select value={selectedPerson} onChange={(e) => setSelectedPerson(e.target.value)} className="border border-gray-300 rounded-md p-2">
-                                            <option value="">Selecione...</option>
-                                            {allPeople.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                        </select>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <button onClick={() => handleAssign(book.id, selectedPerson)} className="bg-black text-white font-bold text-xs px-4 py-2 rounded-md hover:bg-gray-800">
-                                            Atribuir
-                                        </button>
-                                    </td>
-                                </tr>
-                            )})}
-                        </tbody>
-                   </table>
-               </div>
+        <div className="mt-12">
+          <h2 className="font-bold text-xl mb-4">Livros Prontos para Atribuir</h2>
+          <div className="bg-white border border-[var(--border-color)] rounded-lg overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-gray-50/50">
+                  <th className="px-6 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Livro</th>
+                  <th className="px-6 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs">Atribuir a</th>
+                  <th className="px-6 py-3 font-bold text-gray-500 uppercase tracking-wider text-xs"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-color)]">
+                {booksToAssign.map(book => {
+                  const selectedPerson = selectedPeople[book.id] || '';
+                  const setSelectedPerson = (val: string) => setSelectedPeople(prev => ({ ...prev, [book.id]: val }));
+                  return (
+                    <tr key={book.id}>
+                      <td className="px-6 py-4 flex items-center gap-4">
+                        <img src={book.coverUrl} alt={book.title} className="w-10 h-14 object-contain" />
+                        <div>
+                          <p className="font-bold">{book.title}</p>
+                          <p className="text-gray-500 text-xs">{book.authors}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <select value={selectedPerson} onChange={(e) => setSelectedPerson(e.target.value)} className="border border-gray-300 rounded-md p-2">
+                          <option value="">Selecione...</option>
+                          {allPeople.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button onClick={() => handleAssign(book.id, selectedPerson)} className="bg-black text-white font-bold text-xs px-4 py-2 rounded-md hover:bg-gray-800">
+                          Atribuir
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
+        </div>
       )}
 
     </div>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Book } from '../../types';
-import { fetchBookDetailsFromAmazonUrl } from '../../services/geminiService';
+import { fetchBookDetailsFromAmazonUrl } from '../../src/services/openRouterService';
 import { fetchBookDetailsFromGoogleBooksByISBN } from '../../services/googleBooksService';
 
 interface EditBookModalProps {
@@ -93,11 +93,11 @@ const EditBookModal: React.FC<EditBookModalProps> = ({ bookToEdit, onClose, onUp
         const img = new Image();
         img.src = coverUrl;
         img.onload = () => {
-          setFormData(prev => ({ ...prev, coverUrl }));
-          alert('Capa encontrada e atualizada!');
+            setFormData(prev => ({ ...prev, coverUrl }));
+            alert('Capa encontrada e atualizada!');
         };
         img.onerror = () => {
-          alert('Nenhuma capa encontrada no Open Library para este ISBN. A imagem pode não existir ou o ISBN está incorreto.');
+            alert('Nenhuma capa encontrada no Open Library para este ISBN. A imagem pode não existir ou o ISBN está incorreto.');
         };
     };
 
@@ -118,18 +118,18 @@ const EditBookModal: React.FC<EditBookModalProps> = ({ bookToEdit, onClose, onUp
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
                 <form onSubmit={handleSubmit} className="p-8">
                     <h2 className="font-bold text-xl mb-6">{isCreating ? 'Adicionar Novo Livro' : 'Editar Livro'}</h2>
-                    
+
                     <div className="p-4 bg-gray-50 rounded-md border border-gray-200 mb-4">
                         <label className="font-bold text-sm mb-2 block">Importar da Amazon (URL)</label>
                         <div className="flex gap-2">
-                            <input 
-                                type="url" 
+                            <input
+                                type="url"
                                 placeholder="Cole o link do produto aqui"
                                 value={amazonUrl}
                                 onChange={(e) => setAmazonUrl(e.target.value)}
                                 className="w-full border border-gray-300 rounded-md p-2 text-sm"
                             />
-                            <button 
+                            <button
                                 type="button"
                                 onClick={handleFetchFromAmazon}
                                 disabled={isFetchingAmazon}
@@ -143,14 +143,14 @@ const EditBookModal: React.FC<EditBookModalProps> = ({ bookToEdit, onClose, onUp
                     <div className="p-4 bg-gray-50 rounded-md border border-gray-200 mb-4">
                         <label className="font-bold text-sm mb-2 block">Puxar dados via ISBN (Google Books)</label>
                         <div className="flex gap-2">
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 placeholder="ISBN13 do livro"
                                 value={isbnToSearch}
                                 onChange={(e) => setIsbnToSearch(e.target.value)}
                                 className="w-full border border-gray-300 rounded-md p-2 text-sm"
                             />
-                            <button 
+                            <button
                                 type="button"
                                 onClick={handleFetchFromGoogleBooks}
                                 disabled={isFetchingGoogle}
@@ -160,18 +160,18 @@ const EditBookModal: React.FC<EditBookModalProps> = ({ bookToEdit, onClose, onUp
                             </button>
                         </div>
                     </div>
-                    
+
                     <div className="p-4 bg-gray-50 rounded-md border border-gray-200 mb-6">
                         <label className="font-bold text-sm mb-2 block">Puxar capa via ISBN (Open Library)</label>
                         <div className="flex gap-2">
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 placeholder="ISBN13 do livro"
                                 value={isbnForCover}
                                 onChange={(e) => setIsbnForCover(e.target.value)}
                                 className="w-full border border-gray-300 rounded-md p-2 text-sm"
                             />
-                            <button 
+                            <button
                                 type="button"
                                 onClick={handleFetchFromOpenLibrary}
                                 className="bg-green-600 text-white font-bold px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-300"
@@ -182,7 +182,7 @@ const EditBookModal: React.FC<EditBookModalProps> = ({ bookToEdit, onClose, onUp
                     </div>
 
                     <div className="space-y-4">
-                        <img src={formData.coverUrl} alt={formData.title} className="w-24 h-auto mx-auto mb-4 border"/>
+                        <img src={formData.coverUrl} alt={formData.title} className="w-24 h-auto mx-auto mb-4 border" />
                         <input type="text" name="title" placeholder="Título" value={formData.title} onChange={handleChange} className="w-full border border-gray-300 rounded-md p-2" required />
                         <input type="text" name="authors" placeholder="Autor(es)" value={formData.authors} onChange={handleChange} className="w-full border border-gray-300 rounded-md p-2" required />
                         <textarea name="synopsis" placeholder="Sinopse" value={formData.synopsis} onChange={handleChange} className="w-full border border-gray-300 rounded-md p-2 h-24" required />
