@@ -107,7 +107,11 @@ const App: React.FC = () => {
         .order('name');
 
       if (peopleError) throw peopleError;
-      setPeople(peopleData || []);
+      const formattedPeople = (peopleData || []).map(p => ({
+        ...p,
+        imageUrl: p.image_url
+      }));
+      setPeople(formattedPeople);
 
       // Fetch books with citation count from the view
       const { data: booksData, error: booksError } = await supabase

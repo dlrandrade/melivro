@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Book, NotablePerson, Citation } from '../types';
 import MetaTags from '../components/MetaTags';
+import BookCard from '../components/BookCard';
 
-const AFFILIATE_TAG = 'livrme-20';
+const AFFILIATE_TAG = 'melivro-20';
 
 interface BookPageProps {
   allBooks: Book[];
@@ -28,6 +29,61 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
       }));
   }, [book, allCitations, allPeople]);
 
+  // Get the first person who cited this book (for "Other books by this curator")
+  const primaryCurator = useMemo(() => {
+    if (citationsWithPeople.length === 0) return null;
+    return citationsWithPeople[0].person;
+  }, [citationsWithPeople]);
+
+  // Get other books recommended by the same curator
+  const otherBooksByCurator = useMemo(() => {
+    if (!primaryCurator || !book) return [];
+    const curatorBookIds = allCitations
+      .filter(c => c.personId === primaryCurator.id && c.bookId !== book.id)
+      .map(c => c.bookId);
+
+    return allBooks
+      .filter(b => curatorBookIds.includes(b.id))
+      .slice(0, 4);
+  }, [primaryCurator, book, allCitations, allBooks]);
+
+  // Get related books (same category or similar)
+  const relatedBooks = useMemo(() => {
+    if (!book) return [];
+
+    // Get books from the same categories
+    const bookCategories = book.categories || [];
+
+    // Find books that share categories or have similar authors
+    const related = allBooks
+      .filter(b => b.id !== book.id)
+      .map(b => {
+        let score = 0;
+        // Check category overlap
+        const bCategories = b.categories || [];
+        const sharedCategories = bookCategories.filter(cat => bCategories.includes(cat));
+        score += sharedCategories.length * 2;
+
+        // Check if same author
+        if (b.authors === book.authors) score += 3;
+
+        return { book: b, score };
+      })
+      .filter(item => item.score > 0 || Math.random() > 0.7) // Include some random books if no matches
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+      .map(item => item.book);
+
+    // If no related books found, just return random popular books
+    if (related.length === 0) {
+      return allBooks
+        .filter(b => b.id !== book.id)
+        .slice(0, 4);
+    }
+
+    return related;
+  }, [book, allBooks]);
+
   const amazonUrl = useMemo(() => {
     if (!book) return '';
     const id = book.isbn13 || book.title;
@@ -41,7 +97,7 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
     </>
   );
 
-  const truncatedSynopsis = book.synopsis.length > 155 ? book.synopsis.substring(0, 155) + '...' : book.synopsis;
+  const truncatedSynopsis = book.synopsis && book.synopsis.length > 155 ? book.synopsis.substring(0, 155) + '...' : book.synopsis || '';
 
   return (
     <>
@@ -57,7 +113,7 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
           <div className="w-full md:w-64 flex-shrink-0">
             <div className="sticky top-28">
               <div className="w-full aspect-[2/3] bg-white p-4 rounded-sm shadow-sm border border-[var(--border-color)] overflow-hidden mb-8">
-                <img src={book.coverUrl} alt={book.title} className="w-full h-full object-contain" />
+                {book.coverUrl && <img src={book.coverUrl} alt={book.title} className="w-full h-full object-contain" />}
               </div>
               <a href={amazonUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-black text-white rounded-md font-bold text-sm hover:bg-gray-800 transition-all">
                 Comprar na Amazon
@@ -103,6 +159,44 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
             </div>
           </div>
         </div>
+
+        {/* Seção: Outros livros deste curador */}
+        {primaryCurator && otherBooksByCurator.length > 0 && (
+          <section className="mt-20">
+            <div className="flex items-center justify-between mb-8 border-t border-[var(--border-color)] pt-12">
+              <h2 className="font-serif text-2xl font-bold tracking-tighter">
+                Outros livros indicados por {primaryCurator.name}
+              </h2>
+              <Link to={`/p/${primaryCurator.slug}`} className="text-sm font-semibold hover:text-black">
+                Ver todos →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
+              {otherBooksByCurator.map(b => (
+                <BookCard key={b.id} book={b} citationSource={`Citado por ${primaryCurator.name}`} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Seção: Livros relacionados */}
+        {relatedBooks.length > 0 && (
+          <section className="mt-20">
+            <div className="flex items-center justify-between mb-8 border-t border-[var(--border-color)] pt-12">
+              <h2 className="font-serif text-2xl font-bold tracking-tighter">
+                Livros relacionados
+              </h2>
+              <Link to="/livros" className="text-sm font-semibold hover:text-black">
+                Ver todos →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
+              {relatedBooks.map(b => (
+                <BookCard key={b.id} book={b} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </>
   );

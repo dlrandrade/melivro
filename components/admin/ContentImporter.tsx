@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { extractBooksFromUrl, extractBooksFromText, fetchBookDetailsFromTitleAndAuthor } from '../../src/services/openRouterService';
 import { Book, Citation, CitationType, NotablePerson } from '../../types';
@@ -15,10 +14,12 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
   const [sourceType, setSourceType] = useState<SourceType>('url');
   const [inputValue, setInputValue] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isConfirmingAll, setIsConfirmingAll] = useState(false);
   const [enrichingBook, setEnrichingBook] = useState<string | null>(null);
   const [extractedItems, setExtractedItems] = useState<{ title: string; author: string; relevance?: string }[]>([]);
   const [booksToAssign, setBooksToAssign] = useState<(Book & { relevance?: string })[]>([]);
   const [selectedPeople, setSelectedPeople] = useState<Record<string, string>>({});
+  const [globalPersonId, setGlobalPersonId] = useState('');
 
   const handleExtract = async () => {
     if (!inputValue.trim()) return;
@@ -55,9 +56,34 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
       setBooksToAssign(prev => [{ ...addedBook, relevance }, ...prev]);
       setExtractedItems(prev => prev.filter(item => item.title !== title));
     } else {
-      alert('Não foi possível encontrar detalhes para este livro na Amazon.');
+      // Add book without details
+      const newBookData: Omit<Book, 'id' | 'citationCount'> = {
+        title,
+        authors: author,
+        slug: title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, ''),
+        coverUrl: '',
+        synopsis: '',
+        isbn13: '',
+        language: 'PT',
+        categories: [],
+      };
+      const addedBook = await onAddBook(newBookData);
+      setBooksToAssign(prev => [{ ...addedBook, relevance }, ...prev]);
+      setExtractedItems(prev => prev.filter(item => item.title !== title));
     }
     setEnrichingBook(null);
+  };
+
+  // Batch confirm all extracted books
+  const handleConfirmAll = async () => {
+    if (extractedItems.length === 0) return;
+    setIsConfirmingAll(true);
+
+    for (const item of extractedItems) {
+      await handleEnrichAndConfirm(item.title, item.author, item.relevance);
+    }
+
+    setIsConfirmingAll(false);
   };
 
   const handleAssign = (bookId: string, personId: string) => {
@@ -82,7 +108,32 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
       delete next[bookId];
       return next;
     });
-    alert("Citação atribuída com sucesso!");
+  };
+
+  // Batch assign all books to selected person
+  const handleAssignAll = () => {
+    if (!globalPersonId) {
+      alert("Por favor, selecione uma personalidade para atribuir todos os livros.");
+      return;
+    }
+
+    for (const book of booksToAssign) {
+      const citation: Omit<Citation, 'id'> = {
+        bookId: book.id,
+        personId: globalPersonId,
+        citedYear: new Date().getFullYear(),
+        citedType: CitationType.CITED,
+        sourceUrl: sourceType === 'url' ? inputValue : '#',
+        sourceTitle: 'Fonte Importada',
+        quoteExcerpt: book.relevance || 'Citado durante importação de conteúdo.'
+      };
+      onAddCitation(citation);
+    }
+
+    setBooksToAssign([]);
+    setSelectedPeople({});
+    setGlobalPersonId('');
+    alert(`${booksToAssign.length} livros atribuídos com sucesso!`);
   };
 
   return (
@@ -113,8 +164,8 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
             )}
             <button
               onClick={handleExtract}
-              disabled={isExtracting || !!enrichingBook}
-              className={`w-full py-3 rounded-md font-bold transition-all ${isExtracting || !!enrichingBook ? 'bg-gray-300 text-gray-500' : 'bg-black text-white hover:bg-gray-800'}`}
+              disabled={isExtracting || !!enrichingBook || isConfirmingAll}
+              className={`w-full py-3 rounded-md font-bold transition-all ${isExtracting || !!enrichingBook || isConfirmingAll ? 'bg-gray-300 text-gray-500' : 'bg-black text-white hover:bg-gray-800'}`}
             >
               {isExtracting ? 'Extraindo...' : 'Extrair Livros'}
             </button>
@@ -126,7 +177,18 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
           <div className="bg-white border border-[var(--border-color)] rounded-lg overflow-hidden">
             <div className="px-6 py-4 bg-gray-50/50 border-b border-[var(--border-color)] flex justify-between items-center">
               <h2 className="font-bold">Itens para Revisão</h2>
-              <span className="text-xs bg-gray-200 text-black px-2 py-1 rounded-full font-bold">{extractedItems.length} pendentes</span>
+              <div className="flex items-center gap-4">
+                <span className="text-xs bg-gray-200 text-black px-2 py-1 rounded-full font-bold">{extractedItems.length} pendentes</span>
+                {extractedItems.length > 0 && (
+                  <button
+                    onClick={handleConfirmAll}
+                    disabled={isConfirmingAll || !!enrichingBook}
+                    className="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-300"
+                  >
+                    {isConfirmingAll ? 'Confirmando...' : 'Confirmar Todos'}
+                  </button>
+                )}
+              </div>
             </div>
             {extractedItems.length > 0 ? (
               <table className="w-full text-left text-sm">
@@ -147,7 +209,7 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleEnrichAndConfirm(item.title, item.author, item.relevance)}
-                          disabled={isExtracting || !!enrichingBook}
+                          disabled={isExtracting || !!enrichingBook || isConfirmingAll}
                           className="text-black font-bold hover:underline disabled:text-gray-400"
                         >
                           {enrichingBook === item.title ? 'Confirmando...' : 'Confirmar'}
@@ -169,7 +231,26 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
       {/* Seção de Atribuição */}
       {booksToAssign.length > 0 && (
         <div className="mt-12">
-          <h2 className="font-bold text-xl mb-4">Livros Prontos para Atribuir</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-xl">Livros Prontos para Atribuir</h2>
+            <div className="flex items-center gap-4">
+              <select
+                value={globalPersonId}
+                onChange={(e) => setGlobalPersonId(e.target.value)}
+                className="border border-gray-300 rounded-md p-2 text-sm"
+              >
+                <option value="">Selecione para atribuir todos...</option>
+                {allPeople.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <button
+                onClick={handleAssignAll}
+                disabled={!globalPersonId}
+                className="bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-300"
+              >
+                Atribuir Todos ({booksToAssign.length})
+              </button>
+            </div>
+          </div>
           <div className="bg-white border border-[var(--border-color)] rounded-lg overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead>
@@ -186,7 +267,7 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
                   return (
                     <tr key={book.id}>
                       <td className="px-6 py-4 flex items-center gap-4">
-                        <img src={book.coverUrl} alt={book.title} className="w-10 h-14 object-contain" />
+                        {book.coverUrl && <img src={book.coverUrl} alt={book.title} className="w-10 h-14 object-contain" />}
                         <div>
                           <p className="font-bold">{book.title}</p>
                           <p className="text-gray-500 text-xs">{book.authors}</p>
