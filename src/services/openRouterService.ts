@@ -1,6 +1,6 @@
 // src/services/openRouterService.ts
 import { type Book } from '../../types';
-import { fetchBookDetails } from '../../services/bookCoverService';
+import { fetchBookDetails } from './bookCoverService';
 
 /** Generic helper to call OpenRouter Edge Function */
 async function callOpenRouter(options: { prompt?: string; url?: string }): Promise<any> {
@@ -113,12 +113,18 @@ export async function fetchBookDetailsFromTitleAndAuthor(title: string, author: 
       };
     }
 
-    // Fallback: try AI for synopsis if no data found
-    const prompt = `Forneça uma sinopse curta (máximo 2 frases) para o livro "${title}" de ${author}.
-Retorne APENAS um objeto JSON com: synopsis, isbn13. Sem explicações.`;
+    // Fallback: try AI for full details if no data found
+    const prompt = `Forneça os detalhes para o livro "${title}" de ${author}.
+Inclua uma sinopse curta (máximo 2 frases), ISBN-13 e uma URL de capa (pode ser um padrão conhecido da Amazon ou Open Library).
+Retorne APENAS um objeto JSON com as propriedades: synopsis, isbn13, coverUrl. Sem explicações.`;
     const raw = await callOpenRouter({ prompt });
     const jsonStr = extractJson(raw);
-    return JSON.parse(jsonStr);
+    const aiData = JSON.parse(jsonStr);
+    return {
+      coverUrl: aiData.coverUrl || '',
+      synopsis: aiData.synopsis || '',
+      isbn13: aiData.isbn13 || '',
+    };
   } catch (e) {
     console.error('Book details fetch error:', e);
     return null;
