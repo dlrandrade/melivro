@@ -1,5 +1,6 @@
 // src/services/openRouterService.ts
-import { type Book } from '../types';
+import { type Book } from '../../types';
+import { fetchBookDetails } from '../../services/bookCoverService';
 
 /** Generic helper to call OpenRouter Edge Function */
 async function callOpenRouter(options: { prompt?: string; url?: string }): Promise<any> {
@@ -96,20 +97,30 @@ ${text}`;
   }
 }
 
-/** Fetch book details from title + author */
-export async function fetchBookDetailsFromTitleAndAuthor(title: string, author: string): Promise<Book | null> {
+/** Fetch book details from title + author using real APIs */
+export async function fetchBookDetailsFromTitleAndAuthor(title: string, author: string): Promise<Partial<Book> | null> {
   try {
-    const prompt = `Você tem conhecimento sobre o livro "${title}" de ${author}. Forneça:
-- URL de uma capa de alta qualidade (pode ser da Amazon, Google Books ou Open Library)
-- Sinopse curta (máximo 2 frases)
-- ISBN-13 (se conhecido)
+    // Use real book APIs (Google Books + Open Library) for covers
+    const bookData = await fetchBookDetails(title, author);
 
-Retorne APENAS um objeto JSON válido com as propriedades: coverUrl, synopsis, isbn13. Sem explicações adicionais.`;
+    if (bookData) {
+      return {
+        coverUrl: bookData.coverUrl || '',
+        synopsis: bookData.synopsis || '',
+        isbn13: bookData.isbn13 || '',
+        pages: bookData.pages,
+        categories: bookData.categories || [],
+      };
+    }
+
+    // Fallback: try AI for synopsis if no data found
+    const prompt = `Forneça uma sinopse curta (máximo 2 frases) para o livro "${title}" de ${author}.
+Retorne APENAS um objeto JSON com: synopsis, isbn13. Sem explicações.`;
     const raw = await callOpenRouter({ prompt });
     const jsonStr = extractJson(raw);
-    return JSON.parse(jsonStr) as Book;
+    return JSON.parse(jsonStr);
   } catch (e) {
-    console.error('OpenRouter title/author fetch error:', e);
+    console.error('Book details fetch error:', e);
     return null;
   }
 }
