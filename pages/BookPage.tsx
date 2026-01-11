@@ -36,7 +36,7 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
 
   if (!book) return (
     <>
-      <MetaTags title="Livro não encontrado | meLivro.me" description="O livro que você está procurando não foi encontrado." />
+      <MetaTags title="Livro não encontrado | MeLivro" description="O livro que você está procurando não foi encontrado." />
       <div className="p-20 text-center font-bold">Livro não encontrado.</div>
     </>
   );
@@ -46,7 +46,7 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
   return (
     <>
       <MetaTags
-        title={`${book.title} por ${book.authors} | meLivro.me`}
+        title={`${book.title} por ${book.authors} | MeLivro`}
         description={`Veja quem recomendou "${book.title}". Sinopse: ${truncatedSynopsis}`}
         imageUrl={book.coverUrl}
         type="book"

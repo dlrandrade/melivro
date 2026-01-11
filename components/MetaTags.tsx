@@ -36,7 +36,7 @@ const MetaTags: React.FC<MetaTagsProps> = ({
     setMetaTag('property', 'og:type', type);
     setMetaTag('property', 'og:image', imageUrl);
     setMetaTag('property', 'og:url', window.location.href);
-    setMetaTag('property', 'og:site_name', 'meLivro.me');
+    setMetaTag('property', 'og:site_name', 'MeLivro');
 
     // Twitter Card
     setMetaTag('name', 'twitter:card', 'summary_large_image');

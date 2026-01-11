@@ -45,7 +45,7 @@ const Header: React.FC<{ user: any }> = ({ user }) => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="h-20 flex items-center justify-between">
           <Link to="/" className="text-2xl font-extrabold tracking-tighter text-black uppercase">
-            melivro.me
+            MeLivro
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-600">
@@ -78,7 +78,7 @@ const Header: React.FC<{ user: any }> = ({ user }) => {
 const Footer: React.FC = () => (
   <footer className="py-16 mt-20">
     <div className="max-w-7xl mx-auto px-6 text-center">
-      <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} melivro.me. Todos os direitos reservados.</p>
+      <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} MeLivro. Todos os direitos reservados.</p>
     </div>
   </footer>
 );
@@ -338,7 +338,7 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-[#F4F4F4]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-500 font-medium">Carregando melivro.me...</p>
+          <p className="text-gray-500 font-medium">Carregando MeLivro...</p>
         </div>
       </div>
     );

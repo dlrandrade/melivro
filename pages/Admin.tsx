@@ -65,7 +65,7 @@ const Admin: React.FC<AdminProps> = (props) => {
     <div className="max-w-7xl mx-auto px-6 py-12">
       <div className="mb-8">
         <h1 className="font-serif text-4xl font-bold mb-2 tracking-tighter">Painel de Administração</h1>
-        <p className="text-gray-500">Gerencie todo o conteúdo da plataforma meLivro.me.</p>
+        <p className="text-gray-500">Gerencie todo o conteúdo da plataforma MeLivro.</p>
       </div>
 
       <div className="flex items-center justify-between mb-8 pb-8 border-b border-[var(--border-color)]">
