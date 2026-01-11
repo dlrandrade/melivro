@@ -4,7 +4,7 @@ import { extractBooksFromUrl, extractBooksFromText, fetchBookDetailsFromTitleAnd
 import { Book, Citation, CitationType, NotablePerson } from '../../types';
 
 interface ContentImporterProps {
-  onAddBook: (book: Omit<Book, 'id' | 'citationCount'>) => Book;
+  onAddBook: (book: Omit<Book, 'id' | 'citationCount'>) => Promise<Book>;
   allPeople: NotablePerson[];
   onAddCitation: (citation: Omit<Citation, 'id'>) => void;
 }
@@ -51,7 +51,7 @@ const ContentImporter: React.FC<ContentImporterProps> = ({ onAddBook, allPeople,
         language: 'PT',
         categories: [],
       };
-      const addedBook = onAddBook(newBookData);
+      const addedBook = await onAddBook(newBookData);
       setBooksToAssign(prev => [{ ...addedBook, relevance }, ...prev]);
       setExtractedItems(prev => prev.filter(item => item.title !== title));
     } else {

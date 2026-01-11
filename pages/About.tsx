@@ -6,8 +6,8 @@ const About: React.FC = () => {
   return (
     <>
       <MetaTags
-        title="Sobre o livr.me | Nossa Missão"
-        description="livr.me nasceu de uma premissa simples: as pessoas que admiramos são um reflexo dos livros que elas leem. Conectamos você às mentes mais brilhantes."
+        title="Sobre o meLivro.me | Nossa Missão"
+        description="meLivro.me nasceu de uma premissa simples: as pessoas que admiramos são um reflexo dos livros que elas leem. Conectamos você às mentes mais brilhantes."
       />
       <div className="max-w-4xl mx-auto px-6 py-20">
         <div className="text-center mb-12">
@@ -15,7 +15,7 @@ const About: React.FC = () => {
             Nós acreditamos no poder das ideias.
           </h1>
           <p className="text-xl text-gray-500 max-w-3xl mx-auto mt-4">
-            livr.me nasceu de uma premissa simples: as pessoas que admiramos são um reflexo dos livros que elas leem.
+            meLivro.me nasceu de uma premissa simples: as pessoas que admiramos são um reflexo dos livros que elas leem.
           </p>
         </div>
 

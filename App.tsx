@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import PersonPage from './pages/PersonPage';
 import BookPage from './pages/BookPage';
@@ -11,16 +11,41 @@ import Books from './pages/Books';
 import People from './pages/People';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
 import { supabase } from './src/supabase';
-import { Book, NotablePerson, Citation, CitationType } from './types';
+import { Book, NotablePerson, Citation, User } from './types';
 
-const Header: React.FC = () => {
+// Auth Guard Component
+const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) return null;
+  if (!session) return <Navigate to="/login" replace />;
+
+  return <>{children}</>;
+};
+
+const Header: React.FC<{ user: any }> = ({ user }) => {
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[var(--border-color)]">
       <div className="max-w-7xl mx-auto px-6">
         <div className="h-20 flex items-center justify-between">
           <Link to="/" className="text-2xl font-extrabold tracking-tighter text-black uppercase">
-            livr.me
+            melivro.me
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-gray-600">
@@ -34,8 +59,14 @@ const Header: React.FC = () => {
             <button className="text-gray-500 hover:text-black">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </button>
-            <Link to="/dashboard" className="text-gray-500 hover:text-black">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <Link to={user ? "/admin" : "/dashboard"} className="text-gray-500 hover:text-black">
+              {user ? (
+                <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+                  {user.email?.[0].toUpperCase()}
+                </div>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              )}
             </Link>
           </div>
         </div>
@@ -47,7 +78,7 @@ const Header: React.FC = () => {
 const Footer: React.FC = () => (
   <footer className="py-16 mt-20">
     <div className="max-w-7xl mx-auto px-6 text-center">
-      <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} livr.me. Todos os direitos reservados.</p>
+      <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} melivro.me. Todos os direitos reservados.</p>
     </div>
   </footer>
 );
@@ -64,10 +95,10 @@ const App: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [people, setPeople] = useState<NotablePerson[]>([]);
   const [citations, setCitations] = useState<Citation[]>([]);
+  const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
-    setIsLoading(true);
     try {
       // Fetch people
       const { data: peopleData, error: peopleError } = await supabase
@@ -86,10 +117,9 @@ const App: React.FC = () => {
 
       if (booksError) throw booksError;
 
-      // Map database fields to interface fields if necessary
       const formattedBooks = (booksData || []).map(b => ({
         ...b,
-        coverUrl: b.cover_url, // map cover_url (db) to coverUrl (types)
+        coverUrl: b.cover_url,
         citationCount: b.citation_count,
         publicationDate: b.publication_date,
         reviewCount: b.review_count
@@ -125,7 +155,17 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
     fetchData();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const addBook = async (book: Omit<Book, 'id' | 'citationCount'>): Promise<Book> => {
@@ -290,7 +330,6 @@ const App: React.FC = () => {
     };
 
     setCitations(prev => [newCitation, ...prev]);
-    // Refresh books to get updated citation counts
     fetchData();
   };
 
@@ -299,7 +338,7 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-[#F4F4F4]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-500 font-medium">Carregando livr.me...</p>
+          <p className="text-gray-500 font-medium">Carregando melivro.me...</p>
         </div>
       </div>
     );
@@ -309,7 +348,7 @@ const App: React.FC = () => {
     <Router>
       <ScrollToTop />
       <div className="min-h-screen flex flex-col">
-        <Header />
+        <Header user={session?.user} />
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home allBooks={books} allPeople={people} allCitations={citations} />} />
@@ -317,6 +356,7 @@ const App: React.FC = () => {
             <Route path="/personalidades" element={<People allPeople={people} />} />
             <Route path="/sobre" element={<About />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/profile/:username" element={<Profile />} />
             <Route path="/p/:slug" element={<PersonPage allPeople={people} allBooks={books} allCitations={citations} />} />
             <Route path="/b/:slug" element={<BookPage allBooks={books} allCitations={citations} allPeople={people} />} />
@@ -325,17 +365,19 @@ const App: React.FC = () => {
             <Route
               path="/admin"
               element={
-                <Admin
-                  allPeople={people}
-                  allBooks={books}
-                  onAddPerson={addPerson}
-                  onUpdatePerson={updatePerson}
-                  onDeletePerson={deletePerson}
-                  onAddBook={addBook}
-                  onUpdateBook={updateBook}
-                  onDeleteBook={deleteBook}
-                  onAddCitation={addCitation}
-                />
+                <PrivateRoute>
+                  <Admin
+                    allPeople={people}
+                    allBooks={books}
+                    onAddPerson={addPerson}
+                    onUpdatePerson={updatePerson}
+                    onDeletePerson={deletePerson}
+                    onAddBook={addBook}
+                    onUpdateBook={updateBook}
+                    onDeleteBook={deleteBook}
+                    onAddCitation={addCitation}
+                  />
+                </PrivateRoute>
               }
             />
           </Routes>

@@ -124,8 +124,8 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople }) => {
   return (
     <>
       <MetaTags
-        title="Feed da Comunidade | livr.me"
-        description="Veja o que os outros estão lendo e definindo como meta na comunidade livr.me."
+        title="Feed da Comunidade | meLivro.me"
+        description="Veja o que os outros estão lendo e definindo como meta na comunidade meLivro.me."
       />
       <div className="max-w-3xl mx-auto px-6 py-12">
         <div className="text-center mb-12">

@@ -1,9 +1,9 @@
 
-# livr.me Architecture & Deployment
+# meLivro.me Architecture & Deployment
 
 ## 1. Folder Structure
 ```
-/livr.me
+/meLivro.me
 ├── app/
 │   ├── Controllers/      # Route handling logic
 │   ├── Models/           # Database interactions (PDO)

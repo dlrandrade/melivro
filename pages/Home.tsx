@@ -52,7 +52,7 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
   return (
     <>
       <MetaTags
-        title="livr.me | Descubra o que mentes brilhantes estão lendo"
+        title="meLivro.me | Descubra o que mentes brilhantes estão lendo"
         description="Acompanhe as leituras e recomendações de Bill Gates, Naval Ravikant e outros pensadores influentes. Crie sua biblioteca e inspire-se."
         imageUrl="https://i.imgur.com/gSjY8OQ.png"
       />

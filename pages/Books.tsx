@@ -11,7 +11,7 @@ const Books: React.FC<BooksProps> = ({ allBooks }) => {
   return (
     <>
       <MetaTags 
-        title="Explore Nosso Acervo de Livros | livr.me"
+        title="Explore Nosso Acervo de Livros | meLivro.me"
         description="Navegue por todos os livros recomendados por personalidades influentes em um só lugar. Encontre sua próxima leitura."
       />
       <div className="max-w-7xl mx-auto px-6 py-12">

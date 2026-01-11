@@ -36,7 +36,7 @@ export const extractBooksFromUrl = async (url: string) => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Você é um assistente de pesquisa para um site de curadoria de livros chamado livr.me. Sua tarefa é analisar o conteúdo da URL fornecida e extrair uma lista de livros mencionados. Para cada livro, identifique o título exato, o(s) autor(es), e um breve contexto sobre como o livro foi mencionado. A URL é: ${url}. Retorne um array JSON com objetos, cada um contendo 'title', 'author', e 'relevance'.`,
+      contents: `Você é um assistente de pesquisa para um site de curadoria de livros chamado meLivro.me. Sua tarefa é analisar o conteúdo da URL fornecida e extrair uma lista de livros mencionados. Para cada livro, identifique o título exato, o(s) autor(es), e um breve contexto sobre como o livro foi mencionado. A URL é: ${url}. Retorne um array JSON com objetos, cada um contendo 'title', 'author', e 'relevance'.`,
       config: {
         tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",

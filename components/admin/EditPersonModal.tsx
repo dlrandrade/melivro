@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { NotablePerson } from '../../types';
+import ImageUpload from './ImageUpload';
 
 interface EditPersonModalProps {
     personToEdit?: NotablePerson;
@@ -16,15 +16,12 @@ const EditPersonModal: React.FC<EditPersonModalProps> = ({ personToEdit, onClose
         bio: '',
         imageUrl: '',
     });
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     useEffect(() => {
         if (personToEdit) {
             setFormData(personToEdit);
-            setImagePreview(personToEdit.imageUrl);
         } else {
             setFormData({ name: '', slug: '', bio: '', imageUrl: '' });
-            setImagePreview(null);
         }
     }, [personToEdit]);
 
@@ -33,24 +30,17 @@ const EditPersonModal: React.FC<EditPersonModalProps> = ({ personToEdit, onClose
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const previewUrl = URL.createObjectURL(file);
-            setImagePreview(previewUrl);
-            // In a real app, you'd upload the file and get back a URL.
-            // For this mock, we'll just use the object URL.
-            setFormData(prev => ({...prev, imageUrl: previewUrl}));
-        }
+    const handleUploadComplete = (url: string) => {
+        setFormData(prev => ({ ...prev, imageUrl: url }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const finalData = {
             ...formData,
-            slug: formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, ''),
-            country: 'N/A', // Default values
-            tags: []
+            slug: (formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')),
+            country: personToEdit?.country || 'N/A',
+            tags: personToEdit?.tags || []
         };
 
         if (personToEdit) {
@@ -62,36 +52,65 @@ const EditPersonModal: React.FC<EditPersonModalProps> = ({ personToEdit, onClose
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg relative">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-black">&times;</button>
-                <form onSubmit={handleSubmit} className="p-8">
-                    <h2 className="font-bold text-xl mb-6">{personToEdit ? 'Editar' : 'Adicionar'} Personalidade</h2>
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-6">
-                            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                                {imagePreview ? (
-                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-xs text-gray-500">Foto</span>
-                                )}
-                            </div>
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative border border-[var(--border-color)]">
+                <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-black transition-colors text-2xl font-light">&times;</button>
+                <form onSubmit={handleSubmit} className="p-10">
+                    <h2 className="font-serif text-3xl font-bold mb-8 tracking-tighter">{personToEdit ? 'Editar' : 'Adicionar'} Personalidade</h2>
+
+                    <div className="space-y-6">
+                        <ImageUpload
+                            label="Foto da Personalidade"
+                            folder="people"
+                            onUploadComplete={handleUploadComplete}
+                            initialUrl={formData.imageUrl}
+                        />
+
+                        <div className="space-y-4">
                             <div>
-                                <label htmlFor="imageUrl" className="block text-sm font-bold text-gray-700 mb-2">
-                                    Foto da Personalidade
-                                </label>
-                                <input id="imageUrl" name="imageUrl" type="file" accept="image/*" onChange={handleImageChange} className="text-sm" />
-                                <p className="text-xs text-gray-500 mt-1">Ou cole uma URL abaixo.</p>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Nome Completo</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    placeholder="Ex: Bill Gates"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    className="w-full border border-[var(--border-color)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black/5"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Biografia Curta</label>
+                                <textarea
+                                    name="bio"
+                                    placeholder="Uma breve descrição sobre a pessoa..."
+                                    value={formData.bio}
+                                    onChange={handleChange}
+                                    className="w-full border border-[var(--border-color)] rounded-lg p-3 h-32 focus:outline-none focus:ring-2 focus:ring-black/5"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Slug (URL)</label>
+                                <input
+                                    type="text"
+                                    name="slug"
+                                    placeholder="Ex: bill-gates"
+                                    value={formData.slug}
+                                    onChange={handleChange}
+                                    className="w-full border border-[var(--border-color)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black/5 text-gray-500 bg-gray-50"
+                                />
                             </div>
                         </div>
-
-                        <input type="text" name="imageUrl" placeholder="URL da Imagem" value={formData.imageUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-md p-2 text-sm" />
-                        <input type="text" name="name" placeholder="Nome" value={formData.name} onChange={handleChange} className="w-full border border-gray-300 rounded-md p-2" required />
-                        <textarea name="bio" placeholder="Bio" value={formData.bio} onChange={handleChange} className="w-full border border-gray-300 rounded-md p-2 h-24" required />
                     </div>
-                    <div className="mt-6 flex justify-end gap-4">
-                        <button type="button" onClick={onClose} className="bg-gray-200 text-black font-bold px-4 py-2 rounded-md hover:bg-gray-300">Cancelar</button>
-                        <button type="submit" className="bg-black text-white font-bold px-4 py-2 rounded-md hover:bg-gray-800">Salvar</button>
+
+                    <div className="mt-10 flex justify-end gap-4">
+                        <button type="button" onClick={onClose} className="px-6 py-3 text-sm font-bold text-gray-500 hover:text-black transition-colors">Cancelar</button>
+                        <button type="submit" className="bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition-all">
+                            {personToEdit ? 'Salvar Alterações' : 'Criar Personalidade'}
+                        </button>
                     </div>
                 </form>
             </div>

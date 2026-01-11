@@ -4,8 +4,8 @@ const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 const MODEL = "xiaomi/mimo-v2-flash:free";
 
 // ajuste se quiser
-const APP_URL = "https://livr.me";
-const APP_TITLE = "Livrme";
+const APP_URL = "https://meLivro.me";
+const APP_TITLE = "MeLivro";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

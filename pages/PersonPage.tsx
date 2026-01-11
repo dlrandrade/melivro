@@ -29,7 +29,7 @@ const PersonPage: React.FC<PersonPageProps> = ({ allPeople, allBooks, allCitatio
 
   if (!person) return (
     <>
-      <MetaTags title="Pessoa não encontrada | livr.me" description="A pessoa que você está procurando não foi encontrada." />
+      <MetaTags title="Pessoa não encontrada | meLivro.me" description="A pessoa que você está procurando não foi encontrada." />
       <div className="p-20 text-center font-bold">Pessoa não encontrada.</div>
     </>
   );
@@ -39,7 +39,7 @@ const PersonPage: React.FC<PersonPageProps> = ({ allPeople, allBooks, allCitatio
   return (
     <>
       <MetaTags
-        title={`${person.name} | Recomendações de Livros no livr.me`}
+        title={`${person.name} | Recomendações de Livros no meLivro.me`}
         description={`Explore todos os livros recomendados por ${person.name}. ${truncatedBio}`}
         imageUrl={person.imageUrl}
         type="profile"

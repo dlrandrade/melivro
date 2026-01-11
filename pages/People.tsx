@@ -11,7 +11,7 @@ const People: React.FC<PeopleProps> = ({ allPeople }) => {
   return (
     <>
       <MetaTags
-        title="Nossos Curadores | livr.me"
+        title="Nossos Curadores | meLivro.me"
         description="Descubra recomendações de livros através das mentes que você admira. Explore perfis de Bill Gates, Naval Ravikant e mais."
       />
       <div className="max-w-7xl mx-auto px-6 py-12">
