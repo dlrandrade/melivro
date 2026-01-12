@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Book, NotablePerson, Citation } from '../types';
+import { AFFILIATE_TAG } from '../constants';
+import { getAmazonSearchUrl, appendAffiliateTag } from '../src/utils/amazonUtils';
 import MetaTags from '../components/MetaTags';
 import BookCard from '../components/BookCard';
-
-const AFFILIATE_TAG = 'melivro-20';
 
 interface BookPageProps {
   allBooks: Book[];
@@ -87,7 +87,7 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
   const amazonUrl = useMemo(() => {
     if (!book) return '';
     const id = book.isbn13 || book.title;
-    return `https://www.amazon.com.br/s?k=${encodeURIComponent(id)}&tag=${AFFILIATE_TAG}`;
+    return getAmazonSearchUrl(id);
   }, [book]);
 
   if (!book) return (
@@ -147,7 +147,7 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
                         </p>
                         <p className="font-semibold text-gray-800">
                           — <Link to={`/p/${cit.person.slug}`} className="hover:text-black">{cit.person.name}</Link>,{' '}
-                          <a href={cit.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:underline">{cit.sourceTitle} ({cit.citedYear})</a>
+                          <a href={appendAffiliateTag(cit.sourceUrl)} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:underline">{cit.sourceTitle} ({cit.citedYear})</a>
                         </p>
                       </div>
                     </div>

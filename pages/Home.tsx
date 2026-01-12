@@ -4,6 +4,7 @@ import BookCard from '../components/BookCard';
 import PersonCard from '../components/PersonCard';
 import { Book, NotablePerson, Citation } from '../types';
 import MetaTags from '../components/MetaTags';
+import Slideshow from '../components/Slideshow';
 
 interface HomeProps {
   allBooks: Book[];
@@ -71,26 +72,8 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
           </form>
         </section>
 
-        {/* Hero Section */}
-        {featuredHeroPerson && (
-          <section className="relative text-white py-20 md:py-32 rounded-lg overflow-hidden mb-12 bg-black">
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-30"
-              style={{ backgroundImage: `url(${featuredHeroPerson.imageUrl})` }}>
-            </div>
-            <div className="relative z-10 text-center px-4">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-4">
-                Leia como {featuredHeroPerson.name}
-              </h1>
-              <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-8">
-                {featuredHeroPerson.bio}
-              </p>
-              <Link to={`/p/${featuredHeroPerson.slug}`} className="inline-block bg-white text-black px-8 py-3 rounded-md font-bold text-sm hover:bg-gray-200 transition-all">
-                Ver Recomendações
-              </Link>
-            </div>
-          </section>
-        )}
+        {/* Slideshow Header */}
+        <Slideshow />
 
 
         {/* Notable People Section */}

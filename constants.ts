@@ -1,7 +1,7 @@
 
 import { NotablePerson, Book, CitationType, Activity, ActivityType, BookStatus, User } from './types';
 
-export const AFFILIATE_TAG = 'livrme-20';
+export const AFFILIATE_TAG = 'danluz-20';
 
 export const MOCK_USERS: { [key: string]: User } = {
   'u1': { id: 'u1', name: 'Daniel G.', username: 'dan_dev', avatarUrl: 'https://i.pravatar.cc/48?u=dan_dev' },
@@ -141,39 +141,39 @@ export const MOCK_CITATIONS = [
 ];
 
 export const MOCK_ACTIVITIES: Activity[] = [
-    {
-        id: 'a1',
-        user: MOCK_USERS['u1'],
-        type: ActivityType.GOAL_SET,
-        timestamp: '2 horas atrás',
-        payload: { goal: { year: 2024, count: 24 } },
-        likes: 15,
-        comments: 2
+  {
+    id: 'a1',
+    user: MOCK_USERS['u1'],
+    type: ActivityType.GOAL_SET,
+    timestamp: '2 horas atrás',
+    payload: { goal: { year: 2024, count: 24 } },
+    likes: 15,
+    comments: 2
+  },
+  {
+    id: 'a2',
+    user: MOCK_USERS['u2'],
+    type: ActivityType.STATUS_UPDATE,
+    timestamp: '5 horas atrás',
+    payload: {
+      book: MOCK_BOOKS[1], // Educada
+      person: MOCK_PEOPLE[0], // Bill Gates
+      status: BookStatus.READ
     },
-    {
-        id: 'a2',
-        user: MOCK_USERS['u2'],
-        type: ActivityType.STATUS_UPDATE,
-        timestamp: '5 horas atrás',
-        payload: {
-            book: MOCK_BOOKS[1], // Educada
-            person: MOCK_PEOPLE[0], // Bill Gates
-            status: BookStatus.READ
-        },
-        likes: 42,
-        comments: 8
+    likes: 42,
+    comments: 8
+  },
+  {
+    id: 'a3',
+    user: MOCK_USERS['u3'],
+    type: ActivityType.STATUS_UPDATE,
+    timestamp: '1 dia atrás',
+    payload: {
+      book: MOCK_BOOKS[0], // Sapiens
+      person: MOCK_PEOPLE[2], // Yuval Noah Harari
+      status: BookStatus.WANT_TO_READ
     },
-    {
-        id: 'a3',
-        user: MOCK_USERS['u3'],
-        type: ActivityType.STATUS_UPDATE,
-        timestamp: '1 dia atrás',
-        payload: {
-            book: MOCK_BOOKS[0], // Sapiens
-            person: MOCK_PEOPLE[2], // Yuval Noah Harari
-            status: BookStatus.WANT_TO_READ
-        },
-        likes: 28,
-        comments: 5
-    }
+    likes: 28,
+    comments: 5
+  }
 ];
