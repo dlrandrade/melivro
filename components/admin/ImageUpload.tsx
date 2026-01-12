@@ -8,7 +8,7 @@ interface ImageUploadProps {
     initialUrl?: string;
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ label, folder, onUploadComplete, initialUrl }) => {
+export const ImageUpload: React.FC<ImageUploadProps> = ({ label, folder, onUploadComplete, initialUrl }) => {
     const [preview, setPreview] = useState(initialUrl || '');
     const [inputUrl, setInputUrl] = useState(initialUrl || '');
     const [isUploading, setIsUploading] = useState(false);
@@ -115,4 +115,4 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ label, folder, onUploadComple
     );
 };
 
-export default ImageUpload;
+// Removed default export as per user request for named export usage.
