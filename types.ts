@@ -15,7 +15,8 @@ export enum CitationType {
 
 export enum ActivityType {
   STATUS_UPDATE = 'status_update',
-  GOAL_SET = 'goal_set'
+  GOAL_SET = 'goal_set',
+  TEXT_POST = 'text_post'
 }
 
 export interface NotablePerson {
@@ -31,7 +32,7 @@ export interface NotablePerson {
 export interface Book {
   id: string;
   title: string;
-  slug:string;
+  slug: string;
   authors: string;
   isbn10?: string;
   isbn13?: string;
@@ -78,6 +79,7 @@ export interface Activity {
       year: number;
       count: number;
     };
+    text?: string;
   };
   likes: number;
   comments: number;

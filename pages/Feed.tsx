@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../src/supabase';
 import { MOCK_ACTIVITIES } from '../constants';
 import { Activity, BookStatus, ActivityType, Book, NotablePerson, Citation } from '../types';
 import MetaTags from '../components/MetaTags';
@@ -8,6 +9,9 @@ interface FeedProps {
   allCitations: Citation[];
   allBooks: Book[];
   allPeople: NotablePerson[];
+  databaseActivities: Activity[];
+  onRefreshFeed: () => void;
+  user: any;
 }
 
 const getStatusText = (status: BookStatus) => {
@@ -32,6 +36,16 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
           </p>
           <p className="font-serif text-5xl font-bold my-4">{payload.goal.count} livros</p>
           <p className="text-gray-400">em {payload.goal.year}.</p>
+        </div>
+      );
+    }
+
+    if (type === ActivityType.TEXT_POST && payload.text) {
+      return (
+        <div className="py-2">
+          <p className="text-gray-900 text-lg leading-relaxed whitespace-pre-wrap">
+            {payload.text}
+          </p>
         </div>
       );
     }
@@ -82,7 +96,11 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
                 {comments}
               </button>
             </div>
-            <p className="text-xs font-semibold">{timestamp}</p>
+            <p className="text-xs font-semibold">
+              {timestamp.includes('-') && timestamp.includes(':')
+                ? new Date(timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : timestamp}
+            </p>
           </div>
         </div>
       </div>
@@ -91,7 +109,35 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
 };
 
 
-const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople }) => {
+const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople, databaseActivities, onRefreshFeed, user }) => {
+  const [postText, setPostText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!postText.trim() || !user) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('activities')
+        .insert([{
+          user_id: user.id,
+          activity_type: 'text_post',
+          payload: { text: postText.trim() }
+        }]);
+
+      if (error) throw error;
+      setPostText('');
+      onRefreshFeed();
+    } catch (err) {
+      console.error('Error posting:', err);
+      alert('Erro ao postar. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const combinedActivities = useMemo(() => {
     // Convert real citations into activity-like objects
     const citationActivities: Activity[] = allCitations.map(cit => {
@@ -118,8 +164,14 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople }) => {
       };
     });
 
-    return [...citationActivities, ...MOCK_ACTIVITIES].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  }, [allCitations, allBooks, allPeople]);
+    return [...citationActivities, ...databaseActivities, ...MOCK_ACTIVITIES].sort((a, b) => {
+      // Comparison logic for timestamps (handling both strings like "2 horas atrás" and ISO dates)
+      // For simplicity, we'll try to parse dates or put strings at the end
+      const dateA = new Date(a.timestamp).getTime() || 0;
+      const dateB = new Date(b.timestamp).getTime() || 0;
+      return dateB - dateA;
+    });
+  }, [allCitations, allBooks, allPeople, databaseActivities]);
 
   return (
     <>
@@ -132,6 +184,32 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople }) => {
           <h1 className="font-serif text-5xl font-bold text-black tracking-tighter">Feed da Comunidade</h1>
           <p className="text-lg text-gray-500 mt-2">Veja o que os outros estão lendo e as recomendações dos curadores.</p>
         </div>
+
+        {/* Post Input */}
+        {user && (
+          <div className="mb-12 bg-white p-6 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <form onSubmit={handleSubmitPost}>
+              <textarea
+                value={postText}
+                onChange={(e) => setPostText(e.target.value)}
+                placeholder="O que você está lendo agora?"
+                className="w-full border-none focus:ring-0 text-lg resize-none mb-4 min-h-[100px]"
+                maxLength={500}
+              />
+              <div className="flex justify-between items-center border-t pt-4">
+                <span className="text-xs text-gray-400">{postText.length}/500</span>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !postText.trim()}
+                  className="bg-black text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-800 disabled:opacity-50 transition-all"
+                >
+                  {isSubmitting ? 'Postando...' : 'Postar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         <div className="space-y-8">
           {combinedActivities.map(act => <ActivityCard key={act.id} activity={act} />)}
         </div>

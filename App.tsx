@@ -13,7 +13,7 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import { supabase } from './src/supabase';
-import { Book, NotablePerson, Citation, User } from './types';
+import { Book, NotablePerson, Citation, User, Activity, ActivityType } from './types';
 
 // Auth Guard Component
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -95,6 +95,7 @@ const App: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [people, setPeople] = useState<NotablePerson[]>([]);
   const [citations, setCitations] = useState<Citation[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -150,6 +151,40 @@ const App: React.FC = () => {
         quoteExcerpt: c.quote_excerpt
       }));
       setCitations(formattedCitations);
+
+      // Fetch community activities
+      const { data: actsData, error: actsError } = await supabase
+        .from('activities')
+        .select('*, profiles(*), books(*), notable_people(*)')
+        .order('created_at', { ascending: false });
+
+      if (actsError) throw actsError;
+
+      const formattedActivities = (actsData || []).map(a => ({
+        id: a.id,
+        user: {
+          id: a.profiles?.id,
+          name: a.profiles?.full_name || a.profiles?.username || 'Usuário',
+          username: a.profiles?.username,
+          avatarUrl: a.profiles?.avatar_url || 'https://i.pravatar.cc/48'
+        },
+        type: a.activity_type as ActivityType,
+        timestamp: a.created_at, // Pass ISO date for sorting
+        likes: a.likes_count || 0,
+        comments: a.comments_count || 0,
+        payload: {
+          ...a.payload,
+          book: a.books ? {
+            ...a.books,
+            coverUrl: a.books.cover_url
+          } : undefined,
+          person: a.notable_people ? {
+            ...a.notable_people,
+            imageUrl: a.notable_people.image_url
+          } : undefined,
+        }
+      }));
+      setActivities(formattedActivities);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -365,7 +400,7 @@ const App: React.FC = () => {
             <Route path="/p/:slug" element={<PersonPage allPeople={people} allBooks={books} allCitations={citations} />} />
             <Route path="/b/:slug" element={<BookPage allBooks={books} allCitations={citations} allPeople={people} />} />
             <Route path="/search" element={<Search allBooks={books} allPeople={people} />} />
-            <Route path="/feed" element={<Feed allCitations={citations} allBooks={books} allPeople={people} />} />
+            <Route path="/feed" element={<Feed allCitations={citations} allBooks={books} allPeople={people} databaseActivities={activities} onRefreshFeed={fetchData} user={session?.user} />} />
             <Route
               path="/admin"
               element={
