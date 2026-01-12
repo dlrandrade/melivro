@@ -115,4 +115,4 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ label, folder, onUploa
     );
 };
 
-// Removed default export as per user request for named export usage.
+export default ImageUpload;
