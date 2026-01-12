@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Book } from '../../types';
 import { fetchBookDetailsFromAmazonUrl } from '../../src/services/openRouterService';
-import { fetchBookDetailsFromGoogleBooksByISBN } from '../../services/googleBooksService';
+import { fetchBookDetailsFromGoogleBooksByISBN } from '../../src/services/googleBooksService';
 import { ImageUpload } from './ImageUpload';
 
 interface EditBookModalProps {
