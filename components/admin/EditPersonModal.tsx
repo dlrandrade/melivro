@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NotablePerson } from '../../types';
-import ImageUpload from './ImageUpload';
+import { ImageUpload } from './ImageUpload';
 
 interface EditPersonModalProps {
     personToEdit?: NotablePerson;
