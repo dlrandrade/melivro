@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NotablePerson } from '../../types';
-import { ImageUpload } from './ImageUpload';
+import ImageUpload from './ImageUpload';
 
 interface EditPersonModalProps {
     personToEdit?: NotablePerson;
@@ -15,13 +15,17 @@ const EditPersonModal: React.FC<EditPersonModalProps> = ({ personToEdit, onClose
         slug: '',
         bio: '',
         imageUrl: '',
+        occupation: '',
     });
 
     useEffect(() => {
         if (personToEdit) {
-            setFormData(personToEdit);
+            setFormData({
+                ...personToEdit,
+                occupation: personToEdit.tags?.[0] || '',
+            });
         } else {
-            setFormData({ name: '', slug: '', bio: '', imageUrl: '' });
+            setFormData({ name: '', slug: '', bio: '', imageUrl: '', occupation: '' });
         }
     }, [personToEdit]);
 
@@ -37,10 +41,12 @@ const EditPersonModal: React.FC<EditPersonModalProps> = ({ personToEdit, onClose
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const finalData = {
-            ...formData,
+            name: formData.name,
             slug: (formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')),
+            bio: formData.bio,
+            imageUrl: formData.imageUrl,
             country: personToEdit?.country || 'N/A',
-            tags: personToEdit?.tags || []
+            tags: formData.occupation ? [formData.occupation] : []
         };
 
         if (personToEdit) {
@@ -52,8 +58,8 @@ const EditPersonModal: React.FC<EditPersonModalProps> = ({ personToEdit, onClose
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative border border-[var(--border-color)]">
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative border border-[var(--border-color)] my-8">
                 <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-black transition-colors text-2xl font-light">&times;</button>
                 <form onSubmit={handleSubmit} className="p-10">
                     <h2 className="font-serif text-3xl font-bold mb-8 tracking-tighter">{personToEdit ? 'Editar' : 'Adicionar'} Personalidade</h2>
@@ -74,6 +80,19 @@ const EditPersonModal: React.FC<EditPersonModalProps> = ({ personToEdit, onClose
                                     name="name"
                                     placeholder="Ex: Bill Gates"
                                     value={formData.name}
+                                    onChange={handleChange}
+                                    className="w-full border border-[var(--border-color)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black/5"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Ocupação / Ramo de Atuação</label>
+                                <input
+                                    type="text"
+                                    name="occupation"
+                                    placeholder="Ex: Tecnologia, Psicologia, Escritor"
+                                    value={formData.occupation}
                                     onChange={handleChange}
                                     className="w-full border border-[var(--border-color)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black/5"
                                     required
