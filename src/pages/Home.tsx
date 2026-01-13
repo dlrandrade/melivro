@@ -99,23 +99,100 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
           </div>
         </section>
 
-        {/* Featured Curator Section */}
-        {featuredCurator && (
-          <section className="mb-20 bg-white rounded-lg p-12 border border-[var(--border-color)]">
-            <div className="flex flex-col md:flex-row items-center gap-12">
-              <div className="md:w-1/3 text-center md:text-left">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4">Curador em Destaque</h3>
-                <img src={featuredCurator.imageUrl} alt={featuredCurator.name} className="w-24 h-24 rounded-full mx-auto md:mx-0 mb-4" />
-                <h2 className="font-serif text-4xl font-bold tracking-tighter mb-2">{featuredCurator.name}</h2>
-                <p className="text-gray-500 mb-4">{featuredCurator.bio}</p>
-                <Link to={`/p/${featuredCurator.slug}`} className="font-bold text-black hover:underline">Ver todas as recomendações &rarr;</Link>
-              </div>
-              <div className="md:w-2/3 grid grid-cols-2 gap-8">
-                {featuredCuratorBooks.map(book => <BookCard key={book.id} book={book} citationSource={`Citado por ${featuredCurator.name}`} />)}
+        {/* Featured & Stats Section */}
+        <section className="mb-20 bg-white rounded-lg border border-[var(--border-color)] overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[var(--border-color)]">
+
+            {/* Col 1: Destaque (Featured) */}
+            <div className="p-8 flex flex-col items-center text-center">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">Em Destaque</h3>
+              {(() => {
+                const featured = allPeople.find(p => p.is_featured) || allPeople.find(p => p.slug === 'naval') || allPeople[0];
+                if (!featured) return null;
+                return (
+                  <>
+                    <Link to={`/p/${featured.slug}`} className="block group">
+                      <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-gray-100 group-hover:border-black transition-colors">
+                        <img src={featured.imageUrl} alt={featured.name} className="w-full h-full object-cover" />
+                      </div>
+                      <h2 className="font-serif text-2xl font-bold tracking-tighter mb-2 group-hover:underline">{featured.name}</h2>
+                    </Link>
+                    <p className="text-gray-500 text-sm line-clamp-3 mb-4">{featured.bio}</p>
+                    <Link to={`/p/${featured.slug}`} className="text-sm font-bold border-b border-black pb-0.5 hover:text-gray-600 transition-colors">
+                      Ver recomendações
+                    </Link>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Col 2: Mais Visto (Most Viewed) */}
+            <div className="p-8 flex flex-col items-center text-center">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">Mais Visto</h3>
+              {(() => {
+                // Filter out the featured one to avoid duplication if possible, or just show top viewed
+                const featuredId = allPeople.find(p => p.is_featured)?.id;
+                const mostViewed = [...allPeople]
+                  .filter(p => p.id !== featuredId)
+                  .sort((a, b) => (b.views || 0) - (a.views || 0))[0];
+
+                if (!mostViewed) return <p className="text-gray-400 text-sm">Dados insuficientes</p>;
+
+                return (
+                  <>
+                    <Link to={`/p/${mostViewed.slug}`} className="block group">
+                      <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-gray-100 group-hover:border-black transition-colors relative">
+                        <img src={mostViewed.imageUrl} alt={mostViewed.name} className="w-full h-full object-cover" />
+                        <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] py-1 font-bold uppercase tracking-wider">Top #1</div>
+                      </div>
+                      <h2 className="font-serif text-2xl font-bold tracking-tighter mb-2 group-hover:underline">{mostViewed.name}</h2>
+                    </Link>
+                    <p className="text-gray-500 text-sm mb-4">
+                      {mostViewed.views ? `${mostViewed.views} visualizações` : 'Tendência na comunidade'}
+                    </p>
+                    <Link to={`/p/${mostViewed.slug}`} className="text-sm font-bold border-b border-black pb-0.5 hover:text-gray-600 transition-colors">
+                      Ver perfil
+                    </Link>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Col 3: Indique uma Personalidade */}
+            <div className="p-8 flex flex-col items-center text-center bg-gray-50/50">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">Indique uma Personalidade</h3>
+              <div className="w-full max-w-xs">
+                <p className="text-gray-500 text-sm mb-6">Sente falta de alguém? Nos diga quem deveríamos adicionar.</p>
+                <form
+                  action="mailto:eusou@danielluzz.com.br"
+                  method="get"
+                  encType="text/plain"
+                  className="space-y-3"
+                  onSubmit={(e) => {
+                    // Prevent default if we want to handle via JS, but mailto works as basic html form
+                    // For better UX with default mail client:
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const name = formData.get('name');
+                    window.location.href = `mailto:eusou@danielluzz.com.br?subject=Indicação de Personalidade: ${name}&body=Olá, gostaria de indicar a personalidade: ${name}`;
+                  }}
+                >
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Nome da Personalidade"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-black text-sm bg-white"
+                    required
+                  />
+                  <button type="submit" className="w-full bg-black text-white font-bold py-3 rounded-lg text-sm hover:bg-gray-800 transition-colors">
+                    Enviar Indicação
+                  </button>
+                </form>
               </div>
             </div>
-          </section>
-        )}
+
+          </div>
+        </section>
 
         {/* Most Cited Books Section */}
         <section className="mb-20">

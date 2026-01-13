@@ -28,6 +28,8 @@ export interface NotablePerson {
   imageUrl: string;
   country: string;
   tags: string[];
+  views?: number;
+  is_featured?: boolean;
 }
 
 export interface Book {
@@ -83,6 +85,12 @@ export interface Activity {
     };
     text?: string;
     count?: number; // Total count for batch updates
+    preview?: {
+      title: string;
+      image: string;
+      description: string;
+      url: string;
+    };
   };
   likes: number;
   comments: number;

@@ -4,6 +4,8 @@ import BookCard from '../components/BookCard';
 import MetaTags from '../components/MetaTags';
 import { Book, NotablePerson, Citation } from '../types';
 
+import { supabase } from '../supabase';
+
 interface PersonPageProps {
   allPeople: NotablePerson[];
   allBooks: Book[];
@@ -12,6 +14,14 @@ interface PersonPageProps {
 
 const PersonPage: React.FC<PersonPageProps> = ({ allPeople, allBooks, allCitations }) => {
   const { slug } = useParams<{ slug: string }>();
+
+  React.useEffect(() => {
+    if (slug) {
+      supabase.rpc('increment_person_view', { p_slug: slug }).then(({ error }) => {
+        if (error) console.error('Error incrementing view:', error);
+      });
+    }
+  }, [slug]);
 
   const person = useMemo(() =>
     allPeople.find(p => p.slug === slug), [allPeople, slug]

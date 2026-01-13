@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { MOCK_ACTIVITIES } from '../constants';
 import { Activity, BookStatus, ActivityType, Book, NotablePerson, Citation } from '../types';
+import { fetchBookDetailsFromAmazonUrl } from '../services/openRouterService';
 import MetaTags from '../components/MetaTags';
 
 interface FeedProps {
@@ -46,6 +47,22 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
           <p className="text-gray-900 text-lg leading-relaxed whitespace-pre-wrap">
             {payload.text}
           </p>
+          {payload.preview && (
+            <a href={payload.preview.url} target="_blank" rel="noopener noreferrer" className="block mt-4 group">
+              <div className="border border-[var(--border-color)] rounded-lg overflow-hidden bg-gray-50 flex hover:shadow-md transition-shadow">
+                {payload.preview.image && (
+                  <div className="w-32 h-auto flex-shrink-0 bg-white border-r border-[var(--border-color)] flex items-center justify-center p-2">
+                    <img src={payload.preview.image} alt={payload.preview.title} className="max-h-32 object-contain" />
+                  </div>
+                )}
+                <div className="p-4 flex flex-col justify-center">
+                  <h4 className="font-bold text-gray-900 group-hover:text-blue-600 line-clamp-1">{payload.preview.title}</h4>
+                  <p className="text-xs text-gray-500 mb-2 truncate">{payload.preview.url}</p>
+                  <p className="text-sm text-gray-600 line-clamp-2">{payload.preview.description}</p>
+                </div>
+              </div>
+            </a>
+          )}
         </div>
       );
     }
@@ -80,7 +97,7 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
         <div>
           <p className="text-gray-800 leading-relaxed mb-4">
             <Link to={`/p/${user.username}`} className="font-bold hover:underline">{user.name}</Link>
-            {' '}adicionou {payload.count} novos livros à sua lista de recomendações.
+            {': Foram adicionados '}{payload.count} novos livros à sua lista de recomendações.
           </p>
           <div className="grid grid-cols-3 gap-4">
             {payload.books.slice(0, 3).map(book => (
@@ -144,12 +161,49 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople, database
 
     setIsSubmitting(true);
     try {
+      let previewData = null;
+      let finalPostText = postText.trim();
+      const urlMatch = finalPostText.match(/(https?:\/\/[^\s]+)/);
+
+      if (urlMatch) {
+        const url = urlMatch[0];
+        // Basic Amazon Shortener logic
+        if (url.includes('amazon')) {
+          const asinMatch = url.match(/(?:\/dp\/|\/gp\/product\/)([A-Z0-9]{10})/);
+          if (asinMatch) {
+            const asin = asinMatch[1];
+            const shortUrl = `https://www.amazon.com.br/dp/${asin}`;
+            // Replace long URL with short one in text if desired, or keep both. 
+            // Let's replace for cleaner text
+            finalPostText = finalPostText.replace(url, shortUrl);
+
+            // Fetch details
+            try {
+              const details = await fetchBookDetailsFromAmazonUrl(shortUrl);
+              if (details) {
+                previewData = {
+                  title: details.title,
+                  image: details.coverUrl,
+                  description: details.authors ? `Autor: ${details.authors}` : 'Livro na Amazon',
+                  url: shortUrl
+                };
+              }
+            } catch (fetchErr) {
+              console.warn('Failed to fetch rich preview:', fetchErr);
+            }
+          }
+        }
+      }
+
       const { error } = await supabase
         .from('activities')
         .insert([{
           user_id: user.id,
           activity_type: 'text_post',
-          payload: { text: postText.trim() }
+          payload: {
+            text: finalPostText,
+            preview: previewData
+          }
         }]);
 
       if (error) throw error;
