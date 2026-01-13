@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { MOCK_ACTIVITIES } from '../constants';
 import { Activity, BookStatus, ActivityType, Book, NotablePerson, Citation } from '../types';
-import { fetchBookDetailsFromAmazonUrl } from '../services/openRouterService';
+import { fetchBookDetailsFromAmazonUrl, fetchLinkPreview } from '../services/openRouterService';
 import MetaTags from '../components/MetaTags';
 
 interface FeedProps {
@@ -24,8 +24,9 @@ const getStatusText = (status: BookStatus) => {
   }
 };
 
-const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
+const ActivityCard: React.FC<{ activity: Activity; currentUserId?: string; onDelete?: (id: string) => void }> = ({ activity, currentUserId, onDelete }) => {
   const { user, type, payload, timestamp, likes, comments } = activity;
+  const isOwner = currentUserId === user.id;
 
   const renderContent = () => {
     if (type === ActivityType.GOAL_SET && payload.goal) {
@@ -117,10 +118,20 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
       );
     }
     return null;
+    return null;
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-[var(--border-color)]">
+    <div className="bg-white p-6 rounded-lg border border-[var(--border-color)] relative group">
+      {isOwner && onDelete && (
+        <button
+          onClick={() => onDelete(activity.id)}
+          className="absolute top-4 right-4 text-gray-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+          title="Excluir post"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </button>
+      )}
       <div className="flex gap-4">
         <Link to={`/profile/${user.username}`}>
           <img src={user.avatarUrl} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
@@ -167,31 +178,33 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople, database
 
       if (urlMatch) {
         const url = urlMatch[0];
-        // Basic Amazon Shortener logic
-        if (url.includes('amazon')) {
-          const asinMatch = url.match(/(?:\/dp\/|\/gp\/product\/)([A-Z0-9]{10})/);
-          if (asinMatch) {
-            const asin = asinMatch[1];
-            const shortUrl = `https://www.amazon.com.br/dp/${asin}`;
-            // Replace long URL with short one in text if desired, or keep both. 
-            // Let's replace for cleaner text
-            finalPostText = finalPostText.replace(url, shortUrl);
+        let details = null;
 
-            // Fetch details
-            try {
-              const details = await fetchBookDetailsFromAmazonUrl(shortUrl);
-              if (details) {
-                previewData = {
-                  title: details.title,
-                  image: details.coverUrl,
-                  description: details.authors ? `Autor: ${details.authors}` : 'Livro na Amazon',
-                  url: shortUrl
-                };
-              }
-            } catch (fetchErr) {
-              console.warn('Failed to fetch rich preview:', fetchErr);
-            }
+        // Try Amazon first if matches keywords
+        if (url.includes('amazon') || url.includes('amzn.to')) {
+          try {
+            details = await fetchBookDetailsFromAmazonUrl(url);
+          } catch (e) { console.warn('Amazon fetch failed, falling back', e); }
+        }
+
+        // Generic fallback
+        if (!details) {
+          const preview = await fetchLinkPreview(url);
+          if (preview) {
+            previewData = {
+              title: preview.title,
+              image: preview.image || '',
+              description: preview.description,
+              url: url
+            };
           }
+        } else {
+          previewData = {
+            title: details.title || 'Livro Amazon',
+            image: details.coverUrl || '',
+            description: details.authors ? `Autor: ${details.authors}` : 'Livro na Amazon',
+            url: url
+          };
         }
       }
 
@@ -214,6 +227,18 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople, database
       alert('Erro ao postar. Tente novamente.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteActivity = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja apagar este post?')) return;
+    try {
+      const { error } = await supabase.from('activities').delete().eq('id', id);
+      if (error) throw error;
+      onRefreshFeed();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao apagar post.');
     }
   };
 
@@ -339,7 +364,14 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople, database
         )}
 
         <div className="space-y-8">
-          {combinedActivities.map(act => <ActivityCard key={act.id} activity={act} />)}
+          {combinedActivities.map(act => (
+            <ActivityCard
+              key={act.id}
+              activity={act}
+              currentUserId={user?.id}
+              onDelete={act.user.id === user?.id ? handleDeleteActivity : undefined}
+            />
+          ))}
         </div>
       </div>
     </>

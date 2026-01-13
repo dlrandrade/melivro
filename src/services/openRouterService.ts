@@ -62,31 +62,50 @@ Retorne APENAS um objeto JSON válido com as propriedades: title, authors, synop
     console.error('OpenRouter Amazon fetch error:', e);
     return null;
   }
-}
 
-/** Extract list of books from a generic URL */
-export async function extractBooksFromUrl(url: string): Promise<Array<{ title: string; author: string; relevance: string }>> {
-  try {
-    const prompt = `Você é um assistente de curadoria de livros. Analise o conteúdo e extraia, para cada livro mencionado:
+
+  /** Fetch generic link preview */
+  export async function fetchLinkPreview(url: string): Promise<{ title: string; image?: string; description: string } | null> {
+    try {
+      const prompt = `Analise o conteúdo do link fornecido. Gere um preview rico contendo:
+- Título da página ou artigo
+- URL de uma imagem representativa (og:image ou similar)
+- Breve descrição/sumário (máximo 2 linhas)
+
+Retorne APENAS um objeto JSON válido com as propriedades: title, image, description. Sem explicações.`;
+
+      const raw = await callOpenRouter({ prompt, url });
+      const jsonStr = extractJson(raw);
+      return JSON.parse(jsonStr);
+    } catch (e) {
+      console.error('Link preview error:', e);
+      return null;
+    }
+  }
+
+  /** Extract list of books from a generic URL */
+  export async function extractBooksFromUrl(url: string): Promise<Array<{ title: string; author: string; relevance: string }>> {
+    try {
+      const prompt = `Você é um assistente de curadoria de livros. Analise o conteúdo e extraia, para cada livro mencionado:
 - título exato
 - autor(es)
 - breve contexto de como o livro foi citado
 
 Retorne APENAS um array JSON válido de objetos com as chaves "title", "author" e "relevance". Sem explicações adicionais.`;
 
-    const raw = await callOpenRouter({ prompt, url });
-    const jsonStr = extractJson(raw);
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    console.error('OpenRouter extraction error:', e);
-    return [];
+      const raw = await callOpenRouter({ prompt, url });
+      const jsonStr = extractJson(raw);
+      return JSON.parse(jsonStr);
+    } catch (e) {
+      console.error('OpenRouter extraction error:', e);
+      return [];
+    }
   }
-}
 
-/** Extract list of books from raw text */
-export async function extractBooksFromText(text: string): Promise<Array<{ title: string; author: string; relevance: string }>> {
-  try {
-    const prompt = `Você é um assistente de curadoria de livros. Analise o texto abaixo e extraia, para cada livro mencionado:
+  /** Extract list of books from raw text */
+  export async function extractBooksFromText(text: string): Promise<Array<{ title: string; author: string; relevance: string }>> {
+    try {
+      const prompt = `Você é um assistente de curadoria de livros. Analise o texto abaixo e extraia, para cada livro mencionado:
 - título exato
 - autor(es)
 - breve contexto de como o livro foi citado
@@ -95,60 +114,60 @@ Retorne APENAS um array JSON válido de objetos com as chaves "title", "author" 
 
 Texto:
 ${text}`;
-    const raw = await callOpenRouter({ prompt });
-    const jsonStr = extractJson(raw);
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    console.error('OpenRouter text extraction error:', e);
-    return [];
-  }
-}
-
-/** Fetch book details from title + author using real APIs */
-export async function fetchBookDetailsFromTitleAndAuthor(title: string, author: string): Promise<Partial<Book> | null> {
-  try {
-    // Use real book APIs (Google Books + Open Library) for covers
-    const bookData = await fetchBookDetails(title, author);
-
-    if (bookData) {
-      return {
-        coverUrl: bookData.coverUrl || '',
-        synopsis: bookData.synopsis || '',
-        isbn13: bookData.isbn13 || '',
-        pages: bookData.pages,
-        categories: bookData.categories || [],
-      };
+      const raw = await callOpenRouter({ prompt });
+      const jsonStr = extractJson(raw);
+      return JSON.parse(jsonStr);
+    } catch (e) {
+      console.error('OpenRouter text extraction error:', e);
+      return [];
     }
+  }
 
-    // Fallback: try AI for full details if no data found
-    const prompt = `Forneça os detalhes para o livro "${title}" de ${author}.
+  /** Fetch book details from title + author using real APIs */
+  export async function fetchBookDetailsFromTitleAndAuthor(title: string, author: string): Promise<Partial<Book> | null> {
+    try {
+      // Use real book APIs (Google Books + Open Library) for covers
+      const bookData = await fetchBookDetails(title, author);
+
+      if (bookData) {
+        return {
+          coverUrl: bookData.coverUrl || '',
+          synopsis: bookData.synopsis || '',
+          isbn13: bookData.isbn13 || '',
+          pages: bookData.pages,
+          categories: bookData.categories || [],
+        };
+      }
+
+      // Fallback: try AI for full details if no data found
+      const prompt = `Forneça os detalhes para o livro "${title}" de ${author}.
 Inclua uma sinopse curta (máximo 2 frases), ISBN-13 e uma URL de capa (pode ser um padrão conhecido da Amazon ou Open Library).
 Retorne APENAS um objeto JSON com as propriedades: synopsis, isbn13, coverUrl. Sem explicações.`;
-    const raw = await callOpenRouter({ prompt });
-    const jsonStr = extractJson(raw);
-    const aiData = JSON.parse(jsonStr);
-    return {
-      coverUrl: aiData.coverUrl || '',
-      synopsis: aiData.synopsis || '',
-      isbn13: aiData.isbn13 || '',
-    };
-  } catch (e) {
-    console.error('Book details fetch error:', e);
-    return null;
+      const raw = await callOpenRouter({ prompt });
+      const jsonStr = extractJson(raw);
+      const aiData = JSON.parse(jsonStr);
+      return {
+        coverUrl: aiData.coverUrl || '',
+        synopsis: aiData.synopsis || '',
+        isbn13: aiData.isbn13 || '',
+      };
+    } catch (e) {
+      console.error('Book details fetch error:', e);
+      return null;
+    }
   }
-}
 
-/** Get real recommendations for a person */
-export async function getRealRecommendations(personName: string): Promise<Array<{ title: string; author: string; reason: string; year?: number }>> {
-  try {
-    const prompt = `Quais são as recomendações de livros mais conhecidas de ${personName}? Liste título, autor, motivo da recomendação e, se disponível, o ano em que recomendou.
+  /** Get real recommendations for a person */
+  export async function getRealRecommendations(personName: string): Promise<Array<{ title: string; author: string; reason: string; year?: number }>> {
+    try {
+      const prompt = `Quais são as recomendações de livros mais conhecidas de ${personName}? Liste título, autor, motivo da recomendação e, se disponível, o ano em que recomendou.
 
 Retorne APENAS um array JSON válido de objetos com as propriedades: title, author, reason, year. Sem explicações adicionais.`;
-    const raw = await callOpenRouter({ prompt });
-    const jsonStr = extractJson(raw);
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    console.error('OpenRouter recommendations error:', e);
-    return [];
+      const raw = await callOpenRouter({ prompt });
+      const jsonStr = extractJson(raw);
+      return JSON.parse(jsonStr);
+    } catch (e) {
+      console.error('OpenRouter recommendations error:', e);
+      return [];
+    }
   }
-}
