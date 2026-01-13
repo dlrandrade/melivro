@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { extractBooksFromUrl, extractBooksFromText, fetchBookDetailsFromTitleAndAuthor } from '../../src/services/openRouterService';
+import { extractBooksFromUrl, extractBooksFromText, fetchBookDetailsFromTitleAndAuthor } from '../../services/openRouterService';
 import { Book, Citation, CitationType, NotablePerson } from '../../types';
 
 interface ContentImporterProps {
