@@ -128,8 +128,26 @@ const BookPage: React.FC<BookPageProps> = ({ allBooks, allCitations, allPeople }
                 <h1 className="font-serif text-4xl md:text-6xl font-bold text-gray-900 mb-2 leading-tight tracking-tighter">{book.title}</h1>
                 <p className="text-xl font-medium text-gray-500 mb-8">por {book.authors}</p>
 
-                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-                  <p>{book.synopsis}</p>
+                <div className="flex items-center gap-3 mb-8">
+                  {book.rating && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex text-amber-500 text-sm">
+                        {[...Array(5)].map((_, i) => (
+                          <span key={i} className={i < Math.floor(book.rating || 0) ? 'fill-current' : 'text-gray-200'}>
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                      <span className="font-bold text-sm">{book.rating.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {book.reviewCount && (
+                    <span className="text-gray-400 text-sm">{book.reviewCount.toLocaleString()} avaliações</span>
+                  )}
+                </div>
+
+                <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {book.synopsis}
                 </div>
               </div>
 

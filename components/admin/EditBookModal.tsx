@@ -58,6 +58,8 @@ const EditBookModal: React.FC<EditBookModalProps> = ({ bookToEdit, onClose, onUp
                     synopsis: details.synopsis || prev.synopsis,
                     coverUrl: details.coverUrl || prev.coverUrl,
                     isbn13: details.isbn13 || prev.isbn13,
+                    rating: details.rating || prev.rating,
+                    reviewCount: details.reviewCount || prev.reviewCount,
                     slug: amazonUrl.split('/dp/')[1]?.split('/')[0] || prev.slug,
                 }));
             }
@@ -223,6 +225,34 @@ const EditBookModal: React.FC<EditBookModalProps> = ({ bookToEdit, onClose, onUp
                                         type="text"
                                         name="isbn13"
                                         value={formData.isbn13 || ''}
+                                        onChange={handleChange}
+                                        className="w-full border border-[var(--border-color)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black/5"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Nota (1-5)</label>
+                                    <input
+                                        type="number"
+                                        name="rating"
+                                        step="0.1"
+                                        min="1"
+                                        max="5"
+                                        placeholder="Ex: 4.8"
+                                        value={formData.rating || ''}
+                                        onChange={handleChange}
+                                        className="w-full border border-[var(--border-color)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black/5"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Avaliações</label>
+                                    <input
+                                        type="number"
+                                        name="reviewCount"
+                                        placeholder="Ex: 1250"
+                                        value={formData.reviewCount || ''}
                                         onChange={handleChange}
                                         className="w-full border border-[var(--border-color)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black/5"
                                     />

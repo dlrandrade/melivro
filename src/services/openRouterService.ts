@@ -37,20 +37,27 @@ function extractJson(text: string): string {
 }
 
 /** Fetch book details from an Amazon URL */
-export async function fetchBookDetailsFromAmazonUrl(url: string): Promise<Book | null> {
+export async function fetchBookDetailsFromAmazonUrl(url: string): Promise<Partial<Book> | null> {
   try {
-    const prompt = `Você é um assistente para um site de livros. Analise o conteúdo da página e extraia:
+    const prompt = `Você é um especialista em curadoria de livros. Analise o conteúdo da página da Amazon fornecida e extraia:
 - título do livro
 - autor(es)
-- sinopse (máximo 2 frases)
-- URL da capa em alta resolução (procure por imagens .jpg grandes)
+- sinopse detalhada (preferencialmente vinda da seção "bookDescription_feature" ou similar, traduzida para PORTUGUÊS BRASILEIRO se necessário. Mantenha um texto rico e fluido, não apenas 2 frases)
+- URL da capa em alta resolução
 - ISBN-13
+- Nota média de avaliação (rating) de 1 a 5 (ex: 4.8)
+- Número total de avaliações (reviewCount)
 
-Retorne APENAS um objeto JSON válido com as propriedades: title, authors, synopsis, coverUrl, isbn13. Sem explicações adicionais.`;
+Retorne APENAS um objeto JSON válido com as propriedades: title, authors, synopsis, coverUrl, isbn13, rating, reviewCount. Sem explicações adicionais.`;
 
     const raw = await callOpenRouter({ prompt, url });
     const jsonStr = extractJson(raw);
-    return JSON.parse(jsonStr) as Book;
+    const data = JSON.parse(jsonStr);
+    return {
+      ...data,
+      rating: data.rating ? parseFloat(data.rating) : undefined,
+      reviewCount: data.reviewCount ? parseInt(data.reviewCount) : undefined
+    } as Partial<Book>;
   } catch (e) {
     console.error('OpenRouter Amazon fetch error:', e);
     return null;
