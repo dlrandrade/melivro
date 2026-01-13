@@ -147,9 +147,10 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
                       </div>
                       <h2 className="font-serif text-2xl font-bold tracking-tighter mb-2 group-hover:underline">{mostViewed.name}</h2>
                     </Link>
-                    <p className="text-gray-500 text-sm mb-4">
+                    <p className="text-gray-500 text-sm mb-1">
                       {mostViewed.views ? `${mostViewed.views} visualizações` : 'Tendência na comunidade'}
                     </p>
+                    <p className="text-gray-400 text-xs line-clamp-1 mb-4">{mostViewed.bio}</p>
                     <Link to={`/p/${mostViewed.slug}`} className="text-sm font-bold border-b border-black pb-0.5 hover:text-gray-600 transition-colors">
                       Ver perfil
                     </Link>
@@ -162,6 +163,7 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
             <div className="p-8 flex flex-col items-center text-center bg-gray-50/50">
               <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-6">Indique uma Personalidade</h3>
               <div className="w-full max-w-xs">
+                <img src="/community-faces.png" alt="Comunidade" className="w-full h-auto object-contain mb-4 opacity-80 mix-blend-multiply" />
                 <p className="text-gray-500 text-sm mb-6">Sente falta de alguém? Nos diga quem deveríamos adicionar.</p>
                 <form
                   action="mailto:eusou@danielluzz.com.br"
