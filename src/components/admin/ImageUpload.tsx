@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { supabase } from '../../src/supabase';
+import { supabase } from '../../supabase';
 
 interface ImageUploadProps {
     label: string;

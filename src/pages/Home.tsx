@@ -76,11 +76,11 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
         <Slideshow />
 
 
-        {/* Notable People Section */}
+        {/* Notable People Section - DOUBLED */}
         <section className="mb-20">
           <h2 className="font-serif text-3xl font-bold mb-8 text-center tracking-tighter">Explore por Personalidade</h2>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-x-8 gap-y-12">
-            {allPeople.slice(0, 6).map(person => (
+            {allPeople.slice(0, 12).map(person => (
               <PersonCard key={person.id} person={person} />
             ))}
           </div>
@@ -127,6 +127,31 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
             {mostCitedBooks.map(book => (
               <BookCard key={book.id} book={book} citationSource={`${book.citationCount} citações`} />
             ))}
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="mb-20 bg-white rounded-lg p-12 border border-[var(--border-color)]">
+          <h2 className="font-serif text-3xl font-bold mb-10 text-center tracking-tighter">O Que Nossos Leitores Dizem</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6">
+              <div className="text-4xl mb-4">"</div>
+              <p className="text-gray-600 italic mb-4">Descobri 'Sapiens' através da indicação do Bill Gates aqui no MeLivro. Mudou completamente minha visão sobre a história da humanidade!</p>
+              <p className="font-bold">— Maria S.</p>
+              <p className="text-sm text-gray-400">São Paulo, SP</p>
+            </div>
+            <div className="text-center p-6">
+              <div className="text-4xl mb-4">"</div>
+              <p className="text-gray-600 italic mb-4">Antes eu ficava perdido em livrarias. Agora sei exatamente o que ler baseado nas recomendações de pessoas que admiro.</p>
+              <p className="font-bold">— Carlos R.</p>
+              <p className="text-sm text-gray-400">Rio de Janeiro, RJ</p>
+            </div>
+            <div className="text-center p-6">
+              <div className="text-4xl mb-4">"</div>
+              <p className="text-gray-600 italic mb-4">Ver o que Naval Ravikant recomenda me deu uma lista de leituras que está transformando minha forma de pensar sobre negócios.</p>
+              <p className="font-bold">— Ana L.</p>
+              <p className="text-sm text-gray-400">Curitiba, PR</p>
+            </div>
           </div>
         </section>
       </div>

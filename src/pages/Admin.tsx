@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { supabase } from '../src/supabase';
+import { supabase } from '../supabase';
 import { Book, NotablePerson, Citation } from '../types';
 import ContentImporter from '../components/admin/ContentImporter';
 import ManagePeople from '../components/admin/ManagePeople';
 import HomepageEditor from '../components/admin/HomepageEditor';
 import ManageBooks from '../components/admin/ManageBooks';
+import SlideshowEditor from '../components/admin/SlideshowEditor';
 
 interface AdminProps {
   allPeople: NotablePerson[];
@@ -18,7 +19,7 @@ interface AdminProps {
   onAddCitation: (citation: Omit<Citation, 'id'>) => void;
 }
 
-type AdminTab = 'home' | 'import' | 'people' | 'books';
+type AdminTab = 'home' | 'slides' | 'import' | 'people' | 'books';
 
 const Admin: React.FC<AdminProps> = (props) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('home');
@@ -27,6 +28,8 @@ const Admin: React.FC<AdminProps> = (props) => {
     switch (activeTab) {
       case 'home':
         return <HomepageEditor allPeople={props.allPeople} />;
+      case 'slides':
+        return <SlideshowEditor />;
       case 'import':
         return <ContentImporter
           onAddBook={props.onAddBook}
@@ -71,9 +74,10 @@ const Admin: React.FC<AdminProps> = (props) => {
       <div className="flex items-center justify-between mb-8 pb-8 border-b border-[var(--border-color)]">
         <div className="flex gap-4">
           <TabButton tabName="home" label="Início" />
-          <TabButton tabName="import" label="Importador de Conteúdo" />
-          <TabButton tabName="people" label="Gerenciar Personalidades" />
-          <TabButton tabName="books" label="Gerenciar Livros" />
+          <TabButton tabName="slides" label="Slideshow" />
+          <TabButton tabName="import" label="Importador" />
+          <TabButton tabName="people" label="Personalidades" />
+          <TabButton tabName="books" label="Livros" />
         </div>
         <button
           onClick={() => supabase.auth.signOut()}

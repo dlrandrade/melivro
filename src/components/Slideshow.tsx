@@ -1,13 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../supabase';
 
 // Simple slideshow component fetching slides from Supabase "home_slides" table
-// Table schema (id uuid, image_url text, title text, subtitle text, button_text text, button_link text, "order" integer)
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface Slide {
     id: string;

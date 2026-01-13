@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../src/supabase';
+import { supabase } from '../supabase';
 import { MOCK_ACTIVITIES } from '../constants';
 import { Activity, BookStatus, ActivityType, Book, NotablePerson, Citation } from '../types';
 import MetaTags from '../components/MetaTags';
@@ -74,6 +74,31 @@ const ActivityCard: React.FC<{ activity: Activity }> = ({ activity }) => {
         </div>
       );
     }
+
+    if (type === ActivityType.BATCH_RECOMMENDATION && payload.books && payload.count) {
+      return (
+        <div>
+          <p className="text-gray-800 leading-relaxed mb-4">
+            <Link to={`/p/${user.username}`} className="font-bold hover:underline">{user.name}</Link>
+            {' '}adicionou {payload.count} novos livros à sua lista de recomendações.
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            {payload.books.slice(0, 3).map(book => (
+              <Link key={book.id} to={`/b/${book.slug}`} className="block group">
+                <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden border border-[var(--border-color)]">
+                  <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                </div>
+              </Link>
+            ))}
+            {payload.count > 3 && (
+              <div className="flex items-center justify-center bg-gray-100 rounded-lg border border-[var(--border-color)] text-gray-500 font-bold text-lg">
+                +{payload.count - 3}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
     return null;
   };
 
@@ -138,37 +163,86 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople, database
     }
   };
 
-  const combinedActivities = useMemo(() => {
-    // Convert real citations into activity-like objects
-    const citationActivities: Activity[] = allCitations.map(cit => {
-      const book = allBooks.find(b => b.id === cit.bookId);
-      const person = allPeople.find(p => p.id === cit.personId);
 
-      return {
-        id: cit.id,
-        user: {
-          id: person?.id || 'system',
-          name: person?.name || 'Curador',
-          username: person?.slug || 'curador',
-          avatarUrl: person?.imageUrl || 'https://i.pravatar.cc/48'
-        },
-        type: ActivityType.STATUS_UPDATE,
-        timestamp: `${cit.citedYear}`,
-        likes: Math.floor(Math.random() * 100),
-        comments: Math.floor(Math.random() * 20),
-        payload: {
-          book,
-          status: BookStatus.READ,
-          person: person // In this case, the person IS the one who read it
+
+  const combinedActivities = useMemo(() => {
+    // Group citations by personId
+    const citationsByPerson: Record<string, Citation[]> = {};
+    allCitations.forEach(cit => {
+      // Clean up citations with no valid book
+      if (!allBooks.find(b => b.id === cit.bookId)) return;
+      if (!citationsByPerson[cit.personId]) citationsByPerson[cit.personId] = [];
+      citationsByPerson[cit.personId].push(cit);
+    });
+
+    const citationActivities: Activity[] = [];
+
+    Object.entries(citationsByPerson).forEach(([personId, citations]) => {
+      const person = allPeople.find(p => p.id === personId);
+      if (!person) return;
+
+      if (citations.length > 1) {
+        // Create a batch activity
+        // Sort specifically by year to get the "latest" year for timestamp
+        citations.sort((a, b) => b.citedYear - a.citedYear);
+        const books = citations.map(c => allBooks.find(b => b.id === c.bookId)!).filter(Boolean);
+
+        citationActivities.push({
+          id: `batch-${personId}-${citations[0].citedYear}`,
+          user: {
+            id: person.id,
+            name: person.name,
+            username: person.slug,
+            avatarUrl: person.imageUrl
+          },
+          type: ActivityType.BATCH_RECOMMENDATION,
+          timestamp: `${citations[0].citedYear}`, // Using the latest year
+          likes: Math.floor(Math.random() * 200),
+          comments: Math.floor(Math.random() * 50),
+          payload: {
+            books: books,
+            count: books.length,
+            person: person
+          }
+        });
+      } else {
+        // Single activity status update
+        const cit = citations[0];
+        const book = allBooks.find(b => b.id === cit.bookId);
+        if (book) {
+          citationActivities.push({
+            id: cit.id,
+            user: {
+              id: person.id,
+              name: person.name,
+              username: person.slug,
+              avatarUrl: person.imageUrl
+            },
+            type: ActivityType.STATUS_UPDATE,
+            timestamp: `${cit.citedYear}`,
+            likes: Math.floor(Math.random() * 50),
+            comments: Math.floor(Math.random() * 10),
+            payload: {
+              book,
+              status: BookStatus.READ,
+              person: person
+            }
+          });
         }
-      };
+      }
     });
 
     return [...citationActivities, ...databaseActivities, ...MOCK_ACTIVITIES].sort((a, b) => {
       // Comparison logic for timestamps (handling both strings like "2 horas atrás" and ISO dates)
       // For simplicity, we'll try to parse dates or put strings at the end
-      const dateA = new Date(a.timestamp).getTime() || 0;
-      const dateB = new Date(b.timestamp).getTime() || 0;
+      // Treat year strings "2024" as dates
+      const getDate = (ts: string) => {
+        if (/^\d{4}$/.test(ts)) return new Date(parseInt(ts), 0, 1).getTime();
+        return new Date(ts).getTime() || 0;
+      };
+
+      const dateA = getDate(a.timestamp);
+      const dateB = getDate(b.timestamp);
       return dateB - dateA;
     });
   }, [allCitations, allBooks, allPeople, databaseActivities]);
@@ -192,7 +266,7 @@ const Feed: React.FC<FeedProps> = ({ allCitations, allBooks, allPeople, database
               <textarea
                 value={postText}
                 onChange={(e) => setPostText(e.target.value)}
-                placeholder="O que você está lendo agora?"
+                placeholder="O que você está lendo... Compartilhe sua leitura atual!"
                 className="w-full border-none focus:ring-0 text-lg resize-none mb-4 min-h-[100px]"
                 maxLength={500}
               />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../src/supabase';
+import { supabase } from '../supabase';
 import MetaTags from '../components/MetaTags';
 
 const Login: React.FC = () => {

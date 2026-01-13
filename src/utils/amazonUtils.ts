@@ -2,7 +2,7 @@
 /**
  * Utility to ensure Amazon links have the correct affiliate tag.
  */
-import { AFFILIATE_TAG } from '../../constants';
+import { AFFILIATE_TAG } from '../constants';
 
 export const getAmazonSearchUrl = (query: string): string => {
     return `https://www.amazon.com.br/s?k=${encodeURIComponent(query)}&tag=${AFFILIATE_TAG}`;

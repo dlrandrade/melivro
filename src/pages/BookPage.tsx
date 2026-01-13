@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Book, NotablePerson, Citation } from '../types';
 import { AFFILIATE_TAG } from '../constants';
-import { getAmazonSearchUrl, appendAffiliateTag } from '../src/utils/amazonUtils';
+import { getAmazonSearchUrl, appendAffiliateTag } from '../utils/amazonUtils';
 import MetaTags from '../components/MetaTags';
 import BookCard from '../components/BookCard';
 

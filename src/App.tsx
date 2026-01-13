@@ -12,7 +12,7 @@ import People from './pages/People';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
-import { supabase } from './src/supabase';
+import { supabase } from './supabase';
 import { Book, NotablePerson, Citation, User, Activity, ActivityType } from './types';
 
 // Auth Guard Component

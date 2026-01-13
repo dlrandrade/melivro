@@ -16,7 +16,8 @@ export enum CitationType {
 export enum ActivityType {
   STATUS_UPDATE = 'status_update',
   GOAL_SET = 'goal_set',
-  TEXT_POST = 'text_post'
+  TEXT_POST = 'text_post',
+  BATCH_RECOMMENDATION = 'batch_recommendation'
 }
 
 export interface NotablePerson {
@@ -73,6 +74,7 @@ export interface Activity {
   timestamp: string;
   payload: {
     book?: Book;
+    books?: Book[]; // For batch updates
     person?: NotablePerson; // "Inspired by"
     status?: BookStatus;
     goal?: {
@@ -80,6 +82,7 @@ export interface Activity {
       count: number;
     };
     text?: string;
+    count?: number; // Total count for batch updates
   };
   likes: number;
   comments: number;
