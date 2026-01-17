@@ -8,8 +8,10 @@ interface ProfileData {
   id: string;
   username: string;
   full_name: string;
+  email: string;
   avatar_url: string;
   bio: string;
+  reading_goal_2024: number;
 }
 
 const Profile: React.FC = () => {
@@ -23,13 +25,16 @@ const Profile: React.FC = () => {
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
+    email: '',
     bio: '',
     avatar_url: ''
   });
+  const [userActivities, setUserActivities] = useState<any[]>([]);
 
   useEffect(() => {
     fetchProfile();
     checkUser();
+    fetchUserActivities();
   }, [username]);
 
   const checkUser = async () => {
@@ -40,10 +45,6 @@ const Profile: React.FC = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      // If username is not provided, maybe redirect or show error.
-      // Assuming username is passed.
-
-      // We need to find profile by username.
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -55,6 +56,7 @@ const Profile: React.FC = () => {
       setFormData({
         full_name: data.full_name || '',
         username: data.username || '',
+        email: data.email || '',
         bio: data.bio || '',
         avatar_url: data.avatar_url || ''
       });
@@ -62,6 +64,29 @@ const Profile: React.FC = () => {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserActivities = async () => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .single();
+
+      if (!profile) return;
+
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*, profiles(*), books(*), notable_people(*)')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserActivities(data || []);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
     }
   };
 
@@ -74,6 +99,7 @@ const Profile: React.FC = () => {
         id: currentUser.id,
         full_name: formData.full_name,
         username: formData.username,
+        email: formData.email,
         bio: formData.bio,
         avatar_url: formData.avatar_url,
         updated_at: new Date(),
@@ -122,18 +148,33 @@ const Profile: React.FC = () => {
 
           <div className="flex-1">
             <h1 className="font-serif text-5xl font-bold text-black tracking-tighter mb-2">{profile.full_name}</h1>
-            <p className="text-gray-500 text-lg mb-4">@{profile.username}</p>
+            <div className="flex items-center gap-4 mb-4">
+              <p className="text-gray-500 text-lg">@{profile.username}</p>
+              {profile.email && <p className="text-gray-400 text-sm">{profile.email}</p>}
+            </div>
             {profile.bio && <p className="text-gray-700 max-w-xl">{profile.bio}</p>}
           </div>
 
-          {isOwner && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-4 py-2 border border-black rounded-lg font-bold text-sm hover:bg-black hover:text-white transition-colors"
-            >
-              Editar Perfil
-            </button>
-          )}
+          <div className="flex flex-col items-center gap-2">
+            {isOwner && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-6 py-2 bg-black text-white rounded-lg font-bold text-sm hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+              >
+                Editar Perfil
+              </button>
+            )}
+            <div className="flex gap-4 mt-4">
+              <div className="text-center">
+                <span className="block font-bold text-xl">{userActivities.length}</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Posts</span>
+              </div>
+              <div className="text-center border-l border-gray-200 pl-4">
+                <span className="block font-bold text-xl">{profile.reading_goal_2024 || 0}</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Meta 2024</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Edit Modal */}
@@ -179,6 +220,17 @@ const Profile: React.FC = () => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">E-mail</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-black/5 focus:border-black outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Bio</label>
                   <textarea
                     value={formData.bio}
@@ -199,8 +251,40 @@ const Profile: React.FC = () => {
 
         <hr className="my-12 border-[var(--border-color)]" />
 
-        <div className="text-center py-20 bg-gray-50 border border-dashed border-[var(--border-color)] rounded-md">
-          <p className="text-gray-500 font-semibold">Feed de atividades em breve...</p>
+        <div className="space-y-8">
+          <h2 className="font-serif text-3xl font-bold mb-8">Atividades</h2>
+          {userActivities.length > 0 ? (
+            <div className="grid gap-6">
+              {userActivities.map((act) => (
+                <div key={act.id} className="bg-white p-6 rounded-lg border border-[var(--border-color)] shadow-sm">
+                  {act.activity_type === 'text_post' && (
+                    <div>
+                      <p className="text-gray-900 text-lg leading-relaxed whitespace-pre-wrap">{act.payload?.text}</p>
+                      <span className="text-xs text-gray-400 mt-4 block">
+                        {new Date(act.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  )}
+                  {act.activity_type === 'status_update' && act.books && (
+                    <div className="flex gap-4">
+                      <img src={act.books.cover_url} alt={act.books.title} className="w-16 h-24 object-cover rounded" />
+                      <div>
+                        <p className="text-gray-900 font-bold">{act.books.title}</p>
+                        <p className="text-sm text-gray-500">Marque como {act.payload?.status}</p>
+                        <span className="text-xs text-gray-400 mt-2 block">
+                          {new Date(act.created_at).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-gray-50 border border-dashed border-[var(--border-color)] rounded-xl">
+              <p className="text-gray-500 font-semibold">Nenhuma atividade registrada ainda.</p>
+            </div>
+          )}
         </div>
       </div>
     </>
