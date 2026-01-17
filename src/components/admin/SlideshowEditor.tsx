@@ -16,9 +16,11 @@ const SlideshowEditor: React.FC = () => {
     const [slides, setSlides] = useState<Slide[]>([]);
     const [editingSlide, setEditingSlide] = useState<Slide | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSlideshowEnabled, setIsSlideshowEnabled] = useState(true);
 
     useEffect(() => {
         fetchSlides();
+        fetchSettings();
     }, []);
 
     const fetchSlides = async () => {
@@ -28,6 +30,29 @@ const SlideshowEditor: React.FC = () => {
             .order('order');
         if (!error && data) setSlides(data);
         setIsLoading(false);
+    };
+
+    const fetchSettings = async () => {
+        const { data, error } = await supabase
+            .from('site_settings')
+            .select('value')
+            .eq('key', 'slideshow_enabled')
+            .single();
+        
+        if (!error && data) {
+            setIsSlideshowEnabled(data.value === true);
+        }
+    };
+
+    const toggleSlideshow = async () => {
+        const newValue = !isSlideshowEnabled;
+        const { error } = await supabase
+            .from('site_settings')
+            .upsert({ key: 'slideshow_enabled', value: newValue });
+        
+        if (!error) {
+            setIsSlideshowEnabled(newValue);
+        }
     };
 
     const handleSave = async (slide: Slide) => {
@@ -51,8 +76,25 @@ const SlideshowEditor: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            <div className="flex justify-between items-center bg-white p-6 rounded-xl border border-[var(--border-color)]">
+                <div>
+                    <h3 className="text-xl font-bold">Configuração do Slideshow</h3>
+                    <p className="text-sm text-gray-500">Ative ou desative o carrossel na página inicial</p>
+                </div>
+                <button
+                    onClick={toggleSlideshow}
+                    className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${
+                        isSlideshowEnabled 
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                >
+                    {isSlideshowEnabled ? '● Slideshow Ativado' : '○ Slideshow Desativado'}
+                </button>
+            </div>
+
             <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold">Slideshow da Home</h3>
+                <h3 className="text-xl font-bold">Slides</h3>
                 <button
                     onClick={() => setEditingSlide({ image_url: '', title: '', subtitle: '', button_text: '', button_link: '', order: slides.length + 1 })}
                     className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold"
