@@ -4,7 +4,7 @@ import BookCard from '../components/BookCard';
 import PersonCard from '../components/PersonCard';
 import { Book, NotablePerson, Citation } from '../types';
 import MetaTags from '../components/MetaTags';
-import Slideshow from '../components/Slideshow';
+
 
 interface HomeProps {
   allBooks: Book[];
@@ -319,8 +319,7 @@ const Home: React.FC<HomeProps> = ({ allBooks, allPeople, allCitations }) => {
           </form>
         </section>
 
-        {/* Slideshow (mantido) */}
-        <Slideshow />
+
 
         {/* ============================================ */}
         {/* COMPARISON SECTION (Nós vs. Eles) */}

@@ -3,7 +3,7 @@ import { supabase } from '../../supabase';
 
 interface ImageUploadProps {
     label: string;
-    folder: 'covers' | 'people';
+    folder: 'covers' | 'people' | 'avatars' | 'slides';
     onUploadComplete: (url: string) => void;
     initialUrl?: string;
 }

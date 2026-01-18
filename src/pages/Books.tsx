@@ -2,19 +2,22 @@ import React from 'react';
 import { Book } from '../types';
 import BookCard from '../components/BookCard';
 import MetaTags from '../components/MetaTags';
+import Slideshow from '../components/Slideshow';
 
 interface BooksProps {
   allBooks: Book[];
 }
 
+
 const Books: React.FC<BooksProps> = ({ allBooks }) => {
   return (
     <>
-      <MetaTags 
+      <MetaTags
         title="Explore Nosso Acervo de Livros | MeLivro"
         description="Navegue por todos os livros recomendados por personalidades influentes em um só lugar. Encontre sua próxima leitura."
       />
       <div className="max-w-7xl mx-auto px-6 py-12">
+        <Slideshow />
         <div className="text-center mb-12">
           <h1 className="font-serif text-5xl font-bold text-black tracking-tighter">Explore Nosso Acervo</h1>
           <p className="text-lg text-gray-500 mt-2">Todos os livros recomendados em um só lugar.</p>
