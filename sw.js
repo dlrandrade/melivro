@@ -13,6 +13,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only intercept same-origin requests or specific assets we want to cache
+  // This prevents CORS issues with cross-origin images (like Google Books)
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
